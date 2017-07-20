@@ -79,6 +79,12 @@ class VC1_gcc(VC):
 
 
 class VC2_gcc(VC):
-    """A C implementation with OpenMP over inner loop."""
+    """A C implementation with OpenMP over inner (x) loop."""
     def __init__(self, model, dx, dt=None):
         super(VC2_gcc, self).__init__('libvc2_gcc', model, dx, dt)
+
+
+class VC3_gcc(VC):
+    """A C implementation with OpenMP over y loop."""
+    def __init__(self, model, dx, dt=None):
+        super(VC3_gcc, self).__init__('libvc3_gcc', model, dx, dt)
