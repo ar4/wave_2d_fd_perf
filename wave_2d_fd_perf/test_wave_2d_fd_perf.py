@@ -25,9 +25,8 @@ def green(x0, y0, x1, y1, dx, dt, T, v, f):
     return y
 
 @pytest.fixture
-def model_one():
+def model_one(N=10, calc_expected=True):
     """Create a constant model, and the expected wavefield."""
-    N = 10
     model = np.ones([N, N], dtype=np.float32) * 1500
     dx = 5
     dt = 0.001
@@ -39,10 +38,13 @@ def model_one():
     source = ricker(25, nsteps, dt, 0.05)
 
     # direct wave
-    expected = np.array([green(x*dx, y*dx, sx*dx, sy*dx, dx, dt,
+    if calc_expected:
+        expected = np.array([green(x*dx, y*dx, sx*dx, sy*dx, dx, dt,
                                     (nsteps)*dt, 1500,
                                     source) for x in range(N) for y in range(N)])
-    expected = expected.reshape([N, N])
+        expected = expected.reshape([N, N])
+    else:
+        expected = []
     return {'model': model, 'dx': dx, 'dt': dt, 'nsteps': nsteps,
             'sources': np.array([source]), 'sx': np.array([sx]), 'sy': np.array([sy]),
             'expected': expected}

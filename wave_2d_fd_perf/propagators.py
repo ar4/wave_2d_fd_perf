@@ -27,13 +27,13 @@ class Propagator(object):
         self.previous_wavefield = self.wavefield[1]
 
 
-class VC1_gcc(Propagator):
-    """A C implementation."""
-    def __init__(self, model, dx, dt=None):
-        super(VC1_gcc, self).__init__(model, dx, dt)
+class VC(Propagator):
+    """C implementations."""
+    def __init__(self, libname, model, dx, dt=None):
+        super(VC, self).__init__(model, dx, dt)
 
-        self._libvc1 = np.ctypeslib.load_library('libvc1_gcc', wave_2d_fd_perf.__path__[0])
-        self._libvc1.step.argtypes = \
+        self._libvc = np.ctypeslib.load_library(libname, wave_2d_fd_perf.__path__[0])
+        self._libvc.step.argtypes = \
                 [np.ctypeslib.ndpointer(dtype=np.float32, ndim=2,
                                         shape=(self.ny_padded, self.nx_padded),
                                         flags=('C_CONTIGUOUS', 'WRITEABLE')),
@@ -58,11 +58,11 @@ class VC1_gcc(Propagator):
 
         num_sources = sources.shape[0]
         source_len = sources.shape[1]
-        self._libvc1.step(self.current_wavefield, self.previous_wavefield,
-                          self.nx_padded, self.ny_padded, self.model_padded,
-                          self.dt, self.dx,
-                          sources, sources_x, sources_y, num_sources, source_len,
-                          num_steps)
+        self._libvc.step(self.current_wavefield, self.previous_wavefield,
+                         self.nx_padded, self.ny_padded, self.model_padded,
+                         self.dt, self.dx,
+                         sources, sources_x, sources_y, num_sources, source_len,
+                         num_steps)
 
         if num_steps%2 != 0:
             tmp = self.current_wavefield
@@ -70,3 +70,15 @@ class VC1_gcc(Propagator):
             self.previous_wavefield = tmp
 
         return self.current_wavefield[8:self.ny_padded-8, 8:self.nx_padded-8]
+
+
+class VC1_gcc(VC):
+    """A C implementation."""
+    def __init__(self, model, dx, dt=None):
+        super(VC1_gcc, self).__init__('libvc1_gcc', model, dx, dt)
+
+
+class VC2_gcc(VC):
+    """A C implementation with OpenMP over inner loop."""
+    def __init__(self, model, dx, dt=None):
+        super(VC2_gcc, self).__init__('libvc2_gcc', model, dx, dt)
