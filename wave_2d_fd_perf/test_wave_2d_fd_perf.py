@@ -2,7 +2,7 @@
 import pytest
 import numpy as np
 from scipy.integrate import quad
-from wave_2d_fd_perf.propagators import (VC1_gcc)
+from wave_2d_fd_perf.propagators import (VC1_O2_gcc, VC1_O3_gcc, VC1_Ofast_gcc, VC2_O2_gcc, VC2_O3_gcc, VC2_Ofast_gcc, VC3_Ofast_gcc, VC4_Ofast_gcc, VC5_Ofast_gcc, VC6_Ofast_gcc, VC7_Ofast_gcc, VC8_Ofast_gcc, VC9_Ofast_gcc, VC10_Ofast_gcc)
 
 def ricker(freq, length, dt, peak_time):
     """Return a Ricker wavelet with the specified central frequency."""
@@ -49,16 +49,61 @@ def model_one(N=10, calc_expected=True):
             'sources': np.array([source]), 'sx': np.array([sx]), 'sy': np.array([sy]),
             'expected': expected}
 
+
+@pytest.fixture
+def model_two():
+    """Create a random model and compare with VPy1 implementation."""
+    N = 100
+    np.random.seed(0)
+    model = np.random.random([N, N]).astype(np.float32) * 3000 + 1500
+    max_vel = 4500
+    dx = 5
+    dt = 0.0006
+    nsteps = np.ceil(0.2/dt).astype(np.int)
+    num_sources = 10
+    sources_x = np.zeros(num_sources, dtype=np.int)
+    sources_y = np.zeros(num_sources, dtype=np.int)
+    sources = np.zeros([num_sources, nsteps], dtype=np.float32)
+    for sourceIdx in range(num_sources):
+        sources_x[sourceIdx] = np.random.randint(N)
+        sources_y[sourceIdx] = np.random.randint(N)
+        peak_time = np.round((0.05+np.random.rand()*0.05)/dt)*dt
+        sources[sourceIdx, :] = ricker(25, nsteps, dt, peak_time)
+    v = VC1_O2_gcc(model, dx, dt)
+    expected = v.step(nsteps, sources, sources_x, sources_y)
+    return {'model': model, 'dx': dx, 'dt': dt, 'nsteps': nsteps,
+            'sources': sources, 'sx': sources_x, 'sy': sources_y,
+            'expected': expected}
+
+
 @pytest.fixture
 def versions():
     """Return a list of implementations."""
-    return [VC1_gcc]
+    return [VC1_O2_gcc, VC1_O3_gcc, VC1_Ofast_gcc,
+            VC2_O2_gcc, VC2_O3_gcc, VC2_Ofast_gcc,
+            VC3_Ofast_gcc,
+            VC4_Ofast_gcc,
+            VC5_Ofast_gcc,
+            VC6_Ofast_gcc,
+            VC7_Ofast_gcc,
+            VC8_Ofast_gcc,
+            VC9_Ofast_gcc,
+            VC10_Ofast_gcc]
 
-def test_one_reflector(model_one, versions):
-    """Verify that the numeric and analytic wavefields are similar."""
 
-    for v in versions:
-        _test_version(v, model_one, atol=1.5)
+#def test_one_reflector(model_one, versions):
+#    """Verify that the numeric and analytic wavefields are similar."""
+#
+#    for v in versions:
+#        _test_version(v, model_one, atol=1.5)
+
+
+def test_allclose(model_two, versions):
+    """Verify that all implementations produce similar results."""
+
+    for v in versions[1:]:
+        _test_version(v, model_two, atol=1e-4)
+
 
 def _test_version(version, model, atol):
     """Run the test for one implementation."""

@@ -1,3 +1,4 @@
+#include <omp.h>
 static void inner(const float *const restrict f,
 		  float *const restrict fp,
 		  const int nx,
@@ -18,6 +19,7 @@ static void inner(const float *const restrict f,
 	float f_xx;
 
 	for (i = 8; i < ny - 8; i++) {
+#pragma omp parallel for default(none) private(f_xx, k) shared(i)
 		for (j = 8; j < nx - 8; j++) {
 			f_xx = 2 * fd_coeff[0] * f[i * nx + j];
 			for (k = 1; k < 9; k++) {

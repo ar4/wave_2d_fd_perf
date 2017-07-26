@@ -44,7 +44,7 @@ class VC(Propagator):
                  np.ctypeslib.ndpointer(dtype=np.float32, ndim=2,
                                         shape=(self.ny_padded, self.nx_padded),
                                         flags=('C_CONTIGUOUS')),
-                 c_float, c_float,
+                 c_float,
                  np.ctypeslib.ndpointer(dtype=np.float32, ndim=2,
                                         flags=('C_CONTIGUOUS')),
                  np.ctypeslib.ndpointer(dtype=np.int, ndim=1,
@@ -59,8 +59,8 @@ class VC(Propagator):
         num_sources = sources.shape[0]
         source_len = sources.shape[1]
         self._libvc.step(self.current_wavefield, self.previous_wavefield,
-                         self.nx_padded, self.ny_padded, self.model_padded,
-                         self.dt, self.dx,
+                         self.nx_padded, self.ny_padded, self.model_padded2_dt2,
+                         self.dx,
                          sources, sources_x, sources_y, num_sources, source_len,
                          num_steps)
 
@@ -72,19 +72,141 @@ class VC(Propagator):
         return self.current_wavefield[8:self.ny_padded-8, 8:self.nx_padded-8]
 
 
-class VC1_gcc(VC):
+class VCa(VC):
+    """C implementations with variable blocksize."""
+    def __init__(self, libname, model, blocksize_y, blocksize_x, dx, dt=None):
+        super(VCa, self).__init__(model, dx, dt)
+        self.blocksize_y = blocksize_y
+        self.blocksize_x = blocksize_x
+
+    def step(self, num_steps, sources=None, sources_x=None, sources_y=None):
+        """Propagate wavefield."""
+
+        num_sources = sources.shape[0]
+        source_len = sources.shape[1]
+        self._libvc.step(self.current_wavefield, self.previous_wavefield,
+                         self.nx_padded, self.ny_padded, self.model_padded2_dt2,
+                         self.dx,
+                         sources, sources_x, sources_y, num_sources, source_len,
+                         num_steps, self.blocksize_y, self.blocksize_x)
+
+        if num_steps%2 != 0:
+            tmp = self.current_wavefield
+            self.current_wavefield = self.previous_wavefield
+            self.previous_wavefield = tmp
+
+        return self.current_wavefield[8:self.ny_padded-8, 8:self.nx_padded-8]
+
+
+class VC1_O2_gcc(VC):
     """A C implementation."""
     def __init__(self, model, dx, dt=None):
-        super(VC1_gcc, self).__init__('libvc1_gcc', model, dx, dt)
+        super(VC1_O2_gcc, self).__init__('libvc1_O2_gcc', model, dx, dt)
 
 
-class VC2_gcc(VC):
-    """A C implementation with OpenMP over inner (x) loop."""
+class VC1_O3_gcc(VC):
+    """A C implementation."""
     def __init__(self, model, dx, dt=None):
-        super(VC2_gcc, self).__init__('libvc2_gcc', model, dx, dt)
+        super(VC1_O3_gcc, self).__init__('libvc1_O3_gcc', model, dx, dt)
 
 
-class VC3_gcc(VC):
-    """A C implementation with OpenMP over y loop."""
+class VC1_Ofast_gcc(VC):
+    """A C implementation."""
     def __init__(self, model, dx, dt=None):
-        super(VC3_gcc, self).__init__('libvc3_gcc', model, dx, dt)
+        super(VC1_Ofast_gcc, self).__init__('libvc1_Ofast_gcc', model, dx, dt)
+
+
+class VC2_O2_gcc(VC):
+    """A C implementation."""
+    def __init__(self, model, dx, dt=None):
+        super(VC2_O2_gcc, self).__init__('libvc2_O2_gcc', model, dx, dt)
+
+
+class VC2_O3_gcc(VC):
+    """A C implementation."""
+    def __init__(self, model, dx, dt=None):
+        super(VC2_O3_gcc, self).__init__('libvc2_O3_gcc', model, dx, dt)
+
+
+class VC2_Ofast_gcc(VC):
+    """A C implementation."""
+    def __init__(self, model, dx, dt=None):
+        super(VC2_Ofast_gcc, self).__init__('libvc2_Ofast_gcc', model, dx, dt)
+
+
+class VC3_Ofast_gcc(VC):
+    """A vectorized version of VC1."""
+    def __init__(self, model, dx, dt=None):
+        super(VC3_Ofast_gcc, self).__init__('libvc3_Ofast_gcc', model, dx, dt)
+
+
+class VC4_Ofast_gcc(VC):
+    """A vectorized version of VC2."""
+    def __init__(self, model, dx, dt=None):
+        super(VC4_Ofast_gcc, self).__init__('libvc4_Ofast_gcc', model, dx, dt)
+
+
+class VC5_Ofast_gcc(VC):
+    """VC3 with x (inner) loop parallelized."""
+    def __init__(self, model, dx, dt=None):
+        super(VC5_Ofast_gcc, self).__init__('libvc5_Ofast_gcc', model, dx, dt)
+
+
+class VC6_Ofast_gcc(VC):
+    """VC3 with y (outer) loop parallelized."""
+    def __init__(self, model, dx, dt=None):
+        super(VC6_Ofast_gcc, self).__init__('libvc6_Ofast_gcc', model, dx, dt)
+
+
+class VC7_Ofast_gcc(VC):
+    """VC3 with collapsed x and y loops parallelized."""
+    def __init__(self, model, dx, dt=None):
+        super(VC7_Ofast_gcc, self).__init__('libvc7_Ofast_gcc', model, dx, dt)
+
+
+class VC8_Ofast_gcc(VC):
+    """VC6 with blocking, parallelized over y blocks."""
+    def __init__(self, model, dx, dt=None):
+        super(VC8_Ofast_gcc, self).__init__('libvc8_Ofast_gcc', model, dx, dt)
+
+
+class VC9_Ofast_gcc(VC):
+    """VC6 with blocking, parallelized over x blocks."""
+    def __init__(self, model, dx, dt=None):
+        super(VC9_Ofast_gcc, self).__init__('libvc9_Ofast_gcc', model, dx, dt)
+
+
+class VC10_Ofast_gcc(VC):
+    """VC6 with blocking, parallelized over all blocks."""
+    def __init__(self, model, dx, dt=None):
+        super(VC10_Ofast_gcc, self).__init__('libvc10_Ofast_gcc', model, dx, dt)
+        
+
+class VC8a_Ofast_gcc(VCa):
+    """VC8, variable blocksize."""
+    def __init__(self, model, blocksize_y, blocksize_x, dx, dt=None):
+        super(VC8a_Ofast_gcc, self).__init__('libvc8a_Ofast_gcc', model, blocksize_y, blocksize_x, dx, dt)
+
+
+class VC9a_Ofast_gcc(VCa):
+    """VC9, variable blocksize."""
+    def __init__(self, model, blocksize_y, blocksize_x, dx, dt=None):
+        super(VC9a_Ofast_gcc, self).__init__('libvc9a_Ofast_gcc', model, blocksize_y, blocksize_x, dx, dt)
+
+
+class VC10a_Ofast_gcc(VCa):
+    """VC10, variable blocksize."""
+    def __init__(self, model, blocksize_y, blocksize_x, dx, dt=None):
+        super(VC10a_Ofast_gcc, self).__init__('libvc10a_Ofast_gcc', model, blocksize_y, blocksize_x, dx, dt)
+        
+
+#class VC2_gcc(VC):
+#    """A C implementation with OpenMP over inner (x) loop."""
+#    def __init__(self, model, dx, dt=None):
+#        super(VC2_gcc, self).__init__('libvc2_gcc', model, dx, dt)
+#
+#
+#class VC3_gcc(VC):
+#    """A C implementation with OpenMP over y loop."""
+#    def __init__(self, model, dx, dt=None):
+#        super(VC3_gcc, self).__init__('libvc3_gcc', model, dx, dt)
