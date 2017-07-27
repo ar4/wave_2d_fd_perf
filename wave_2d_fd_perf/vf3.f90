@@ -1,4 +1,4 @@
-module vf1
+module vf3
 
         implicit none
 
@@ -63,38 +63,79 @@ contains
 
                 integer :: i
                 integer :: j
-                integer :: k
-                integer :: sx
-                integer :: sy
                 integer :: nx
                 integer :: ny
                 integer :: num_sources
-                real :: f_xx
 
                 nx = size(f, dim=1)
                 ny = size(f, dim=2)
                 num_sources = size(sources, dim=2)
 
-                do i = 9, ny - 8
-                do j = 9, nx - 8
-                f_xx = 2 * fd_coeff(1) * f(j, i)
-                do k = 1, 8
-                f_xx = f_xx + fd_coeff(k + 1) *                        &
-                        (f(j, i + k) + f(j, i - k) +                   &
-                        f(j + k, i) + f(j - k, i))
-                end do
-                fp(j, i) = (model_padded2_dt2(j, i) * f_xx +           &
-                        2 * f(j, i) - fp(j, i))
-                end do
-                end do
+                forall (i = 9 : ny - 8, j = 9 : nx - 8)
+                        fp(j, i) = step_update(f, fp(j, i),            &
+                                model_padded2_dt2(j, i), i, j, fd_coeff)
+                end forall
 
-                do i = 1, num_sources
-                sx = sources_x(i) + 9
-                sy = sources_y(i) + 9
-                fp(sx, sy) = fp(sx, sy) + (model_padded2_dt2(sx, sy)   &
-                        * sources(step_idx, i))
-                end do
+                forall (i = 1 : num_sources)
+                        fp(sources_x(i) + 9, sources_y(i) + 9) =       &
+                                add_source(fp(sources_x(i) + 9,        &
+                                sources_y(i) + 9),                     &
+                                model_padded2_dt2(sources_x(i) + 9,    &
+                                sources_y(i) + 9),                     &
+                                sources(step_idx, i))
+                end forall
 
         end subroutine step_inner
 
-end module vf1
+
+        pure function step_update(f, fp, model_padded2_dt2, i, j,      &
+                        fd_coeff)
+
+                real, intent (in), dimension (:, :) :: f
+                real, intent (in) :: fp
+                real, intent (in) :: model_padded2_dt2
+                integer, intent (in) :: i
+                integer, intent (in) :: j
+                real, intent (in), dimension (9) :: fd_coeff
+
+                real :: step_update
+
+                step_update = (model_padded2_dt2 *                     &
+                        laplacian(f, i, j, fd_coeff) + 2 * f(j, i) - fp)
+
+        end function step_update
+
+
+        pure function laplacian(f, i, j, fd_coeff)
+
+                real, intent (in), dimension (:, :) :: f
+                integer, intent (in) :: i
+                integer, intent (in) :: j
+                real, intent (in), dimension (9) :: fd_coeff
+
+                real :: laplacian
+                integer :: k
+
+                laplacian = 2 * fd_coeff(1) * f(j, i)
+                do k = 1, 8
+                laplacian = laplacian + fd_coeff(k + 1) *              &
+                        (f(j, i + k) + f(j, i - k) +                   &
+                        f(j + k, i) + f(j - k, i))
+                end do
+
+        end function laplacian
+
+
+        pure function add_source(fp, model_padded2_dt2, source)
+
+                real, intent (in) :: fp
+                real, intent (in) :: model_padded2_dt2
+                real, intent (in) :: source
+
+                real :: add_source
+
+                add_source = fp + model_padded2_dt2 * source
+
+        end function add_source
+
+end module vf3

@@ -1,4 +1,4 @@
-module vf1
+module vf2
 
         implicit none
 
@@ -63,13 +63,9 @@ contains
 
                 integer :: i
                 integer :: j
-                integer :: k
-                integer :: sx
-                integer :: sy
                 integer :: nx
                 integer :: ny
                 integer :: num_sources
-                real :: f_xx
 
                 nx = size(f, dim=1)
                 ny = size(f, dim=2)
@@ -77,15 +73,34 @@ contains
 
                 do i = 9, ny - 8
                 do j = 9, nx - 8
-                f_xx = 2 * fd_coeff(1) * f(j, i)
-                do k = 1, 8
-                f_xx = f_xx + fd_coeff(k + 1) *                        &
-                        (f(j, i + k) + f(j, i - k) +                   &
-                        f(j + k, i) + f(j - k, i))
-                end do
-                fp(j, i) = (model_padded2_dt2(j, i) * f_xx +           &
+                fp(j, i) = (model_padded2_dt2(j, i) *                  &
+                        (2 * fd_coeff(1) * f(j, i) +                   &
+                        fd_coeff(2) *                                  &
+                        (f(j, i + 1) + f(j, i - 1) +                   &
+                        f(j + 1, i) + f(j - 1, i)) +                   &
+                        fd_coeff(3) *                                  &
+                        (f(j, i + 2) + f(j, i - 2) +                   &
+                        f(j + 2, i) + f(j - 2, i)) +                   &
+                        fd_coeff(4) *                                  &
+                        (f(j, i + 3) + f(j, i - 3) +                   &
+                        f(j + 3, i) + f(j - 3, i)) +                   &
+                        fd_coeff(5) *                                  &
+                        (f(j, i + 4) + f(j, i - 4) +                   &
+                        f(j + 4, i) + f(j - 4, i)) +                   &
+                        fd_coeff(6) *                                  &
+                        (f(j, i + 5) + f(j, i - 5) +                   &
+                        f(j + 5, i) + f(j - 5, i)) +                   &
+                        fd_coeff(7) *                                  &
+                        (f(j, i + 6) + f(j, i - 6) +                   &
+                        f(j + 6, i) + f(j - 6, i)) +                   &
+                        fd_coeff(8) *                                  &
+                        (f(j, i + 7) + f(j, i - 7) +                   &
+                        f(j + 7, i) + f(j - 7, i)) +                   &
+                        fd_coeff(9) *                                  &
+                        (f(j, i + 8) + f(j, i - 8) +                   &
+                        f(j + 8, i) + f(j - 8, i))) +                  &
                         2 * f(j, i) - fp(j, i))
-                end do
+
                 end do
 
                 do i = 1, num_sources
@@ -97,4 +112,4 @@ contains
 
         end subroutine step_inner
 
-end module vf1
+end module vf2

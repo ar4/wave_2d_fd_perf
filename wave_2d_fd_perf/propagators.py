@@ -4,7 +4,7 @@ finite difference method so that runtimes can be compared.
 from ctypes import c_int, c_float
 import numpy as np
 import wave_2d_fd_perf
-from wave_2d_fd_perf import libvf1_O2_gcc
+from wave_2d_fd_perf import libvf1_O2_gcc, libvf1_O3_gcc, libvf1_Ofast_gcc, libvf2_Ofast_gcc, libvf3_Ofast_gcc
 
 class Propagator(object):
     """A finite difference propagator for the 2D wave equation."""
@@ -227,3 +227,31 @@ class VF1_O2_gcc(VF):
     def __init__(self, model, dx, dt=None):
         super(VF1_O2_gcc, self).__init__(model, dx, dt)
         self.fstep = libvf1_O2_gcc.vf1.step
+
+
+class VF1_O3_gcc(VF):
+    """VF1, with -O3."""
+    def __init__(self, model, dx, dt=None):
+        super(VF1_O3_gcc, self).__init__(model, dx, dt)
+        self.fstep = libvf1_O3_gcc.vf1.step
+
+
+class VF1_Ofast_gcc(VF):
+    """VF1, with -Ofast."""
+    def __init__(self, model, dx, dt=None):
+        super(VF1_Ofast_gcc, self).__init__(model, dx, dt)
+        self.fstep = libvf1_Ofast_gcc.vf1.step
+
+
+class VF2_Ofast_gcc(VF):
+    """Like VF1, but uses forall."""
+    def __init__(self, model, dx, dt=None):
+        super(VF2_Ofast_gcc, self).__init__(model, dx, dt)
+        self.fstep = libvf2_Ofast_gcc.vf2.step
+
+
+class VF3_Ofast_gcc(VF):
+    """Like VF1, but uses do concurrent."""
+    def __init__(self, model, dx, dt=None):
+        super(VF3_Ofast_gcc, self).__init__(model, dx, dt)
+        self.fstep = libvf3_Ofast_gcc.vf3.step
