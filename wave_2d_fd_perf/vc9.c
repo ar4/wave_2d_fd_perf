@@ -56,8 +56,8 @@ static void inner(const float *const restrict f,
 	int bj;
 	int sx;
 	int sy;
-	const int blocksize_y = 64;
-	const int blocksize_x = 64;
+	const int blocksize_y = 8;
+	const int blocksize_x = 128;
 	const int nby = (int)((ny - 16 + 0.5*blocksize_y)/blocksize_y);
 	const int nbx = (int)((nx - 16 + 0.5*blocksize_x)/blocksize_x);
 

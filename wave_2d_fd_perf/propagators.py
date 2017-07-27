@@ -75,7 +75,7 @@ class VC(Propagator):
 class VCa(VC):
     """C implementations with variable blocksize."""
     def __init__(self, libname, model, blocksize_y, blocksize_x, dx, dt=None):
-        super(VCa, self).__init__(model, dx, dt)
+        super(VCa, self).__init__(libname, model, dx, dt)
         self.blocksize_y = blocksize_y
         self.blocksize_x = blocksize_x
 
