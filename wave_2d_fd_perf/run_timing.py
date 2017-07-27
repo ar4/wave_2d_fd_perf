@@ -19,7 +19,7 @@ def run_timing_num_steps(num_repeat=10, num_steps=range(0, 110, 10), model_size=
     return times
 
 
-def run_timing_model_size(num_repeat=10, num_steps=20, model_sizes=range(200, 2200, 200)):
+def run_timing_model_size(num_repeat=10, num_steps=10, model_sizes=range(200, 2200, 200)):
     """Time implementations as model size varies."""
 
     versions = _versions()
