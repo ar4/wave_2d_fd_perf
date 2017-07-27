@@ -4,6 +4,7 @@ finite difference method so that runtimes can be compared.
 from ctypes import c_int, c_float
 import numpy as np
 import wave_2d_fd_perf
+from wave_2d_fd_perf import libvf1_O2_gcc
 
 class Propagator(object):
     """A finite difference propagator for the 2D wave equation."""
@@ -98,38 +99,59 @@ class VCa(VC):
         return self.current_wavefield[8:self.ny_padded-8, 8:self.nx_padded-8]
 
 
+class VF(Propagator):
+    """Fortran implementations."""
+    def __init__(self, model, dx, dt=None):
+        super(VF, self).__init__(model, dx, dt)
+
+    def step(self, num_steps, sources=None, sources_x=None, sources_y=None):
+        """Propagate wavefield."""
+
+        self.fstep(self.current_wavefield.T, self.previous_wavefield.T,
+                         self.model_padded2_dt2.T,
+                         self.dx,
+                         sources.T, sources_x, sources_y, num_steps)
+
+        if num_steps%2 != 0:
+            tmp = self.current_wavefield
+            self.current_wavefield = self.previous_wavefield
+            self.previous_wavefield = tmp
+
+        return self.current_wavefield[8:self.ny_padded-8, 8:self.nx_padded-8]
+
+
 class VC1_O2_gcc(VC):
-    """A C implementation."""
+    """A C implementation with loop in Laplacian."""
     def __init__(self, model, dx, dt=None):
         super(VC1_O2_gcc, self).__init__('libvc1_O2_gcc', model, dx, dt)
 
 
 class VC1_O3_gcc(VC):
-    """A C implementation."""
+    """VC1 with -O3."""
     def __init__(self, model, dx, dt=None):
         super(VC1_O3_gcc, self).__init__('libvc1_O3_gcc', model, dx, dt)
 
 
 class VC1_Ofast_gcc(VC):
-    """A C implementation."""
+    """VC1 with -Ofast."""
     def __init__(self, model, dx, dt=None):
         super(VC1_Ofast_gcc, self).__init__('libvc1_Ofast_gcc', model, dx, dt)
 
 
 class VC2_O2_gcc(VC):
-    """A C implementation."""
+    """Like VC1 but with Laplacian loop manually unrolled."""
     def __init__(self, model, dx, dt=None):
         super(VC2_O2_gcc, self).__init__('libvc2_O2_gcc', model, dx, dt)
 
 
 class VC2_O3_gcc(VC):
-    """A C implementation."""
+    """VC2 with -O3."""
     def __init__(self, model, dx, dt=None):
         super(VC2_O3_gcc, self).__init__('libvc2_O3_gcc', model, dx, dt)
 
 
 class VC2_Ofast_gcc(VC):
-    """A C implementation."""
+    """VC2 with -Ofast."""
     def __init__(self, model, dx, dt=None):
         super(VC2_Ofast_gcc, self).__init__('libvc2_Ofast_gcc', model, dx, dt)
 
@@ -198,15 +220,10 @@ class VC10a_Ofast_gcc(VCa):
     """VC10, variable blocksize."""
     def __init__(self, model, blocksize_y, blocksize_x, dx, dt=None):
         super(VC10a_Ofast_gcc, self).__init__('libvc10a_Ofast_gcc', model, blocksize_y, blocksize_x, dx, dt)
-        
 
-#class VC2_gcc(VC):
-#    """A C implementation with OpenMP over inner (x) loop."""
-#    def __init__(self, model, dx, dt=None):
-#        super(VC2_gcc, self).__init__('libvc2_gcc', model, dx, dt)
-#
-#
-#class VC3_gcc(VC):
-#    """A C implementation with OpenMP over y loop."""
-#    def __init__(self, model, dx, dt=None):
-#        super(VC3_gcc, self).__init__('libvc3_gcc', model, dx, dt)
+
+class VF1_O2_gcc(VF):
+    """A simple Fortran implementation."""
+    def __init__(self, model, dx, dt=None):
+        super(VF1_O2_gcc, self).__init__(model, dx, dt)
+        self.fstep = libvf1_O2_gcc.vf1.step

@@ -2,7 +2,7 @@
 import pytest
 import numpy as np
 from scipy.integrate import quad
-from wave_2d_fd_perf.propagators import (VC1_O2_gcc, VC1_O3_gcc, VC1_Ofast_gcc, VC2_O2_gcc, VC2_O3_gcc, VC2_Ofast_gcc, VC3_Ofast_gcc, VC4_Ofast_gcc, VC5_Ofast_gcc, VC6_Ofast_gcc, VC7_Ofast_gcc, VC8_Ofast_gcc, VC9_Ofast_gcc, VC10_Ofast_gcc)
+from wave_2d_fd_perf.propagators import (VC1_O2_gcc, VC1_O3_gcc, VC1_Ofast_gcc, VC2_O2_gcc, VC2_O3_gcc, VC2_Ofast_gcc, VC3_Ofast_gcc, VC4_Ofast_gcc, VC5_Ofast_gcc, VC6_Ofast_gcc, VC7_Ofast_gcc, VC8_Ofast_gcc, VC9_Ofast_gcc, VC10_Ofast_gcc, VF1_O2_gcc)
 
 def ricker(freq, length, dt, peak_time):
     """Return a Ricker wavelet with the specified central frequency."""
@@ -88,7 +88,8 @@ def versions():
             VC7_Ofast_gcc,
             VC8_Ofast_gcc,
             VC9_Ofast_gcc,
-            VC10_Ofast_gcc]
+            VC10_Ofast_gcc,
+            VF1_O2_gcc]
 
 
 #def test_one_reflector(model_one, versions):
@@ -102,12 +103,12 @@ def test_allclose(model_two, versions):
     """Verify that all implementations produce similar results."""
 
     for v in versions[1:]:
-        _test_version(v, model_two, atol=1e-4)
+        print(v.__name__)
+        _test_version(v, model_two, atol=5e-4)
 
 
 def _test_version(version, model, atol):
     """Run the test for one implementation."""
     v = version(model['model'], model['dx'], model['dt'])
     y = v.step(model['nsteps'], model['sources'], model['sx'], model['sy'])
-    print('y', y.shape, 'exp', model['expected'].shape)
     assert np.allclose(y, model['expected'], atol=atol)

@@ -19,6 +19,7 @@ def configuration(parent_package='',top_path=None):
     config.add_extension(name='libvc8a_Ofast_gcc', sources=['vc8a.c'], extra_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-Ofast', '-std=c11', '-fopenmp'], extra_link_args=['-fopenmp'])
     config.add_extension(name='libvc9a_Ofast_gcc', sources=['vc9a.c'], extra_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-Ofast', '-std=c11', '-fopenmp'], extra_link_args=['-fopenmp'])
     config.add_extension(name='libvc10a_Ofast_gcc', sources=['vc10a.c'], extra_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-Ofast', '-std=c11', '-fopenmp'], extra_link_args=['-fopenmp'])
+    config.add_extension(name='libvf1_O2_gcc', sources=['vf1.f90'], extra_f90_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-O2', '-std=f95'])
 
     #config.add_extension(name='libvc2_gcc', sources=['vc2.c'], extra_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-O3', '-std=c11', '-fopenmp'], extra_link_args=['-Wall', '-Wextra', '-pedantic', '-Werror''-fopenmp'])
     #config.add_extension(name='libvc3_gcc', sources=['vc3.c'], extra_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-O3', '-std=c11', '-fopenmp'], extra_link_args=['-Wall', '-Wextra', '-pedantic', '-Werror''-fopenmp'])
