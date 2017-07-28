@@ -101,8 +101,8 @@ void step(float *restrict f,
 		15360.0f / 302702400 / (dx * dx),
 		-735.0f / 302702400 / (dx * dx)
 	};
-	const int blocksize_y = 32;
-	const int blocksize_x = 8;
+	const int blocksize_y = 16;
+	const int blocksize_x = 64;
 	const int nby = (int)((float)(ny - 16) / blocksize_y) +
 	    (int)(((ny - 16) % blocksize_y) != 0);
 	const int nbx = (int)((float)(nx - 16) / blocksize_x) +

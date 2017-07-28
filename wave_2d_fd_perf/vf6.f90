@@ -1,4 +1,4 @@
-module vf2
+module vf6
 
         implicit none
 
@@ -63,8 +63,6 @@ contains
 
                 integer :: i
                 integer :: j
-                integer :: sx
-                integer :: sy
                 integer :: nx
                 integer :: ny
                 integer :: num_sources
@@ -73,8 +71,7 @@ contains
                 ny = size(f, dim=2)
                 num_sources = size(sources, dim=2)
 
-                do i = 9, ny - 8
-                do j = 9, nx - 8
+                do concurrent (i = 9 : ny - 8, j = 9 : nx - 8)
                 fp(j, i) = (model_padded2_dt2(j, i) *                  &
                         (2 * fd_coeff(1) * f(j, i) +                   &
                         fd_coeff(2) *                                  &
@@ -104,15 +101,15 @@ contains
                         2 * f(j, i) - fp(j, i))
 
                 end do
-                end do
 
-                do i = 1, num_sources
-                sx = sources_x(i) + 9
-                sy = sources_y(i) + 9
-                fp(sx, sy) = fp(sx, sy) + (model_padded2_dt2(sx, sy)   &
-                        * sources(step_idx, i))
+                do concurrent (i = 1 : num_sources)
+                fp(sources_x(i) + 9, sources_y(i) + 9) =               &
+                        fp(sources_x(i) + 9, sources_y(i) + 9)+        &
+                        model_padded2_dt2(sources_x(i) + 9,            &
+                        sources_y(i) + 9) *                            &
+                        sources(step_idx, i)
                 end do
 
         end subroutine step_inner
 
-end module vf2
+end module vf6

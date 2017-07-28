@@ -24,7 +24,9 @@ def configuration(parent_package='',top_path=None):
     config.add_extension(name='libvf1_Ofast_gcc', sources=['vf1.f90'], extra_f90_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-Ofast', '-std=f95'])
     config.add_extension(name='libvf2_Ofast_gcc', sources=['vf2.f90'], extra_f90_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-Ofast', '-std=f95'])
     config.add_extension(name='libvf3_Ofast_gcc', sources=['vf3.f90'], extra_f90_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-Ofast', '-std=f95'])
-    config.add_extension(name='libvf4_Ofast_gcc', sources=['vf4.f90'], extra_f90_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-Ofast', '-std=f2008'])
+    config.add_extension(name='libvf4_Ofast_gcc', sources=['vf4.f90'], extra_f90_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-Ofast', '-std=f95'])
+    config.add_extension(name='libvf5_Ofast_gcc', sources=['vf5.f90'], extra_f90_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-Ofast', '-std=f2008'])
+    config.add_extension(name='libvf6_Ofast_gcc', sources=['vf6.f90'], extra_f90_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-Ofast', '-std=f2008'])
 
     #config.add_extension(name='libvc2_gcc', sources=['vc2.c'], extra_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-O3', '-std=c11', '-fopenmp'], extra_link_args=['-Wall', '-Wextra', '-pedantic', '-Werror''-fopenmp'])
     #config.add_extension(name='libvc3_gcc', sources=['vc3.c'], extra_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-O3', '-std=c11', '-fopenmp'], extra_link_args=['-Wall', '-Wextra', '-pedantic', '-Werror''-fopenmp'])
