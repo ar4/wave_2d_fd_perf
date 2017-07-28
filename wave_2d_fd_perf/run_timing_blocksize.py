@@ -27,8 +27,8 @@ def _versions():
 
 
 def _blocksizes():
-    """Return a list of blocksizes to try. -1 = model size"""
-    return [8, 16, 32, 64, 128, -1]
+    """Return a list of blocksizes to try."""
+    return [8, 16, 32, 64, 128]
 
 def _make_model(N, nsteps):
     """Create a model with a given number of elements and time steps."""
@@ -64,10 +64,6 @@ def _time_versions(versions, model, num_repeat, dataframe):
 
 def _time_version(version, model, blocksize_y, blocksize_x, num_repeat):
     """Time a particular version."""
-    if blocksize_y == -1:
-        blocksize_y = model['model'].shape[0]
-    if blocksize_x == -1:
-        blocksize_x = model['model'].shape[1]
     v = version(model['model'], blocksize_y, blocksize_x, model['dx'], model['dt'])
 
     def closure():
