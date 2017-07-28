@@ -1,5 +1,5 @@
-static void inner(const float *const restrict f,
-		  float *const restrict fp,
+static void inner(const float *restrict const f,
+		  float *restrict const fp,
 		  const int nx,
 		  const int ny,
 		  const float *restrict const model_padded2_dt2,

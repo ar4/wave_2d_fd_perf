@@ -1,6 +1,6 @@
 #include <omp.h>
-static void inner_block(const float *const restrict f,
-			float *const restrict fp,
+static void inner_block(const float *restrict const f,
+			float *restrict const fp,
 			const int nx,
 			const int ny,
 			const float *restrict const model_padded2_dt2,
@@ -12,7 +12,6 @@ static void inner_block(const float *const restrict f,
 
 	int i;
 	int j;
-	int k;
 	float f_xx;
 	const int y_start = bi * blocksize_y + 8;
 	const int x_start = bj * blocksize_x + 8;
@@ -23,13 +22,47 @@ static void inner_block(const float *const restrict f,
 
 	for (i = y_start; i < y_end; i++) {
 		for (j = x_start; j < x_end; j++) {
-			f_xx = 2 * fd_coeff[0] * f[i * nx + j];
-			for (k = 1; k < 9; k++) {
-				f_xx += fd_coeff[k] *
-				    (f[i * nx + j + k] +
-				     f[i * nx + j - k] +
-				     f[(i + k) * nx + j] + f[(i - k) * nx + j]);
-			}
+			f_xx =
+			    (2 * fd_coeff[0] * f[i * nx + j] +
+			     fd_coeff[1] *
+			     (f[i * nx + j + 1] +
+			      f[i * nx + j - 1] +
+			      f[(i + 1) * nx + j] +
+			      f[(i - 1) * nx + j]) +
+			     fd_coeff[2] *
+			     (f[i * nx + j + 2] +
+			      f[i * nx + j - 2] +
+			      f[(i + 2) * nx + j] +
+			      f[(i - 2) * nx + j]) +
+			     fd_coeff[3] *
+			     (f[i * nx + j + 3] +
+			      f[i * nx + j - 3] +
+			      f[(i + 3) * nx + j] +
+			      f[(i - 3) * nx + j]) +
+			     fd_coeff[4] *
+			     (f[i * nx + j + 4] +
+			      f[i * nx + j - 4] +
+			      f[(i + 4) * nx + j] +
+			      f[(i - 4) * nx + j]) +
+			     fd_coeff[5] *
+			     (f[i * nx + j + 5] +
+			      f[i * nx + j - 5] +
+			      f[(i + 5) * nx + j] +
+			      f[(i - 5) * nx + j]) +
+			     fd_coeff[6] *
+			     (f[i * nx + j + 6] +
+			      f[i * nx + j - 6] +
+			      f[(i + 6) * nx + j] +
+			      f[(i - 6) * nx + j]) +
+			     fd_coeff[7] *
+			     (f[i * nx + j + 7] +
+			      f[i * nx + j - 7] +
+			      f[(i + 7) * nx + j] +
+			      f[(i - 7) * nx + j]) +
+			     fd_coeff[8] *
+			     (f[i * nx + j + 8] +
+			      f[i * nx + j - 8] +
+			      f[(i + 8) * nx + j] + f[(i - 8) * nx + j]));
 
 			fp[i * nx + j] =
 			    (model_padded2_dt2[i * nx + j] * f_xx +
@@ -38,8 +71,8 @@ static void inner_block(const float *const restrict f,
 	}
 }
 
-static void inner(const float *const restrict f,
-		  float *const restrict fp,
+static void inner(const float *restrict const f,
+		  float *restrict const fp,
 		  const int nx,
 		  const int ny,
 		  const float *restrict const model_padded2_dt2,

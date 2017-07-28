@@ -169,19 +169,19 @@ class VC4_Ofast_gcc(VC):
 
 
 class VC5_Ofast_gcc(VC):
-    """VC3 with x (inner) loop parallelized."""
+    """VC4 with x (inner) loop parallelized."""
     def __init__(self, model, dx, dt=None):
         super(VC5_Ofast_gcc, self).__init__('libvc5_Ofast_gcc', model, dx, dt)
 
 
 class VC6_Ofast_gcc(VC):
-    """VC3 with y (outer) loop parallelized."""
+    """VC4 with y (outer) loop parallelized."""
     def __init__(self, model, dx, dt=None):
         super(VC6_Ofast_gcc, self).__init__('libvc6_Ofast_gcc', model, dx, dt)
 
 
 class VC7_Ofast_gcc(VC):
-    """VC3 with collapsed x and y loops parallelized."""
+    """VC4 with collapsed x and y loops parallelized."""
     def __init__(self, model, dx, dt=None):
         super(VC7_Ofast_gcc, self).__init__('libvc7_Ofast_gcc', model, dx, dt)
 
@@ -220,6 +220,19 @@ class VC10a_Ofast_gcc(VCa):
     """VC10, variable blocksize."""
     def __init__(self, model, blocksize_y, blocksize_x, dx, dt=None):
         super(VC10a_Ofast_gcc, self).__init__('libvc10a_Ofast_gcc', model, blocksize_y, blocksize_x, dx, dt)
+
+
+class VC11_Ofast_gcc(VC):
+    """VC6 with timestep loop inside parallel region."""
+    def __init__(self, model, dx, dt=None):
+        super(VC11_Ofast_gcc, self).__init__('libvc11_Ofast_gcc', model, dx, dt)
+
+    def step(self, num_steps, sources=None, sources_x=None, sources_y=None):
+        srcsort = np.argsort(sources_y)
+        sources_sort = sources[srcsort, :]
+        sources_x_sort = sources_x[srcsort]
+        sources_y_sort = sources_y[srcsort]
+        return super(VC11_Ofast_gcc, self).step(num_steps, sources_sort, sources_x_sort, sources_y_sort)
 
 
 class VF1_O2_gcc(VF):

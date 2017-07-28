@@ -2,7 +2,7 @@
 from timeit import repeat
 import numpy as np
 import pandas as pd
-from wave_2d_fd_perf.propagators import (VC1_O2_gcc, VC1_O3_gcc, VC1_Ofast_gcc, VC2_O2_gcc, VC2_O3_gcc, VC2_Ofast_gcc, VC3_Ofast_gcc, VC4_Ofast_gcc, VC5_Ofast_gcc, VC6_Ofast_gcc, VC7_Ofast_gcc, VC8_Ofast_gcc, VC9_Ofast_gcc, VC10_Ofast_gcc, VF1_O2_gcc, VF1_O3_gcc, VF1_Ofast_gcc, VF2_Ofast_gcc, VF3_Ofast_gcc, VF4_Ofast_gcc, VF5_Ofast_gcc, VF6_Ofast_gcc)
+from wave_2d_fd_perf.propagators import (VC1_O2_gcc, VC1_O3_gcc, VC1_Ofast_gcc, VC2_O2_gcc, VC2_O3_gcc, VC2_Ofast_gcc, VC3_Ofast_gcc, VC4_Ofast_gcc, VC5_Ofast_gcc, VC6_Ofast_gcc, VC7_Ofast_gcc, VC8_Ofast_gcc, VC9_Ofast_gcc, VC10_Ofast_gcc, VC11_Ofast_gcc, VF1_O2_gcc, VF1_O3_gcc, VF1_Ofast_gcc, VF2_Ofast_gcc, VF3_Ofast_gcc, VF4_Ofast_gcc, VF5_Ofast_gcc, VF6_Ofast_gcc)
 from wave_2d_fd_perf.test_wave_2d_fd_perf import ricker
 
 def run_timing_num_steps(num_repeat=10, num_steps=range(0, 110, 10), model_size=1000):
@@ -49,6 +49,7 @@ def _versions():
             {'class': VC8_Ofast_gcc, 'name': 'C v8 (gcc, -Ofast)'},
             {'class': VC9_Ofast_gcc, 'name': 'C v9 (gcc, -Ofast)'},
             {'class': VC10_Ofast_gcc, 'name': 'C v10 (gcc, -Ofast)'},
+            {'class': VC11_Ofast_gcc, 'name': 'C v11 (gcc, -Ofast)'},
             {'class': VF1_O2_gcc, 'name': 'F v1 (gcc, -O2)'},
             {'class': VF1_O3_gcc, 'name': 'F v1 (gcc, -O3)'},
             {'class': VF1_Ofast_gcc, 'name': 'F v1 (gcc, -Ofast)'},
