@@ -85,11 +85,20 @@ class VCa(VC):
 
         num_sources = sources.shape[0]
         source_len = sources.shape[1]
-        self._libvc.step(self.current_wavefield, self.previous_wavefield,
-                         self.nx_padded, self.ny_padded, self.model_padded2_dt2,
-                         self.dx,
-                         sources, sources_x, sources_y, num_sources, source_len,
-                         num_steps, self.blocksize_y, self.blocksize_x)
+        # V9a doesn't use blocksize_y, so only pass it if not None
+        if blocksize_y:
+            self._libvc.step(self.current_wavefield, self.previous_wavefield,
+                             self.nx_padded, self.ny_padded, self.model_padded2_dt2,
+                             self.dx,
+                             sources, sources_x, sources_y, num_sources, source_len,
+                             num_steps, self.blocksize_y, self.blocksize_x)
+        else:
+            self._libvc.step(self.current_wavefield, self.previous_wavefield,
+                             self.nx_padded, self.ny_padded, self.model_padded2_dt2,
+                             self.dx,
+                             sources, sources_x, sources_y, num_sources, source_len,
+                             num_steps, self.blocksize_x)
+
 
         if num_steps%2 != 0:
             tmp = self.current_wavefield
@@ -212,8 +221,8 @@ class VC8a_Ofast_gcc(VCa):
 
 class VC9a_Ofast_gcc(VCa):
     """VC9, variable blocksize."""
-    def __init__(self, model, blocksize_y, blocksize_x, dx, dt=None):
-        super(VC9a_Ofast_gcc, self).__init__('libvc9a_Ofast_gcc', model, blocksize_y, blocksize_x, dx, dt)
+    def __init__(self, model, blocksize_x, dx, dt=None):
+        super(VC9a_Ofast_gcc, self).__init__('libvc9a_Ofast_gcc', model, None, blocksize_x, dx, dt)
 
 
 class VC10a_Ofast_gcc(VCa):
