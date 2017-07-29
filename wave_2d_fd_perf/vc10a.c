@@ -3,25 +3,21 @@ static void inner_block(const float *restrict const f,
 			float *restrict const fp,
 			const int nx,
 			const int ny,
-	  	  	const int nxi,
+	  		const int nxi,
 			const float *restrict const model_padded2_dt2,
 			const float *restrict const fd_coeff,
-			const int bi,
 			const int bj,
-			const int blocksize_y, const int blocksize_x)
+			const int blocksize_x)
 {
 
 	int i;
 	int j;
 	float f_xx;
-	const int y_start = bi * blocksize_y + 8;
 	const int x_start = bj * blocksize_x + 8;
-	const int y_end = y_start + blocksize_y <= ny - 8 ?
-	    y_start + blocksize_y : ny - 8;
 	const int x_end = x_start + blocksize_x <= nxi + 8 ?
 	    x_start + blocksize_x : nxi + 8;
 
-	for (i = y_start; i < y_end; i++) {
+	for (i = 8; i < ny - 8; i++) {
 		for (j = x_start; j < x_end; j++) {
 			f_xx =
 			    (2 * fd_coeff[0] * f[i * nx + j] +
@@ -83,22 +79,19 @@ static void inner(const float *restrict const f,
 		  const int *restrict const sources_y,
 		  const int num_sources, const int source_len,
 		  const float *restrict const fd_coeff, const int step,
-		  const int blocksize_y, const int blocksize_x,
-		  const int nby, const int nbx)
+		  const int blocksize_x,
+		  const int nbx)
 {
 
 	int i;
-	int bi;
 	int bj;
 	int sx;
 	int sy;
 
-#pragma omp parallel for default(none) collapse(2)
-	for (bi = 0; bi < nby; bi++) {
-		for (bj = 0; bj < nbx; bj++) {
+#pragma omp parallel for default(none) private(bj) schedule(static, 1)
+	for (bj = 0; bj < nbx; bj++) {
 			inner_block(f, fp, nx, ny, nxi, model_padded2_dt2,
-				    fd_coeff, bi, bj, blocksize_y, blocksize_x);
-		}
+				    fd_coeff, bj, blocksize_x);
 	}
 
 	for (i = 0; i < num_sources; i++) {
@@ -122,7 +115,7 @@ void step(float *restrict f,
 	  const int *restrict const sources_x,
 	  const int *restrict const sources_y,
 	  const int num_sources, const int source_len, const int num_steps,
-	  const int blocksize_y, const int blocksize_x)
+	  const int blocksize_x)
 {
 
 	int step;
@@ -138,15 +131,13 @@ void step(float *restrict f,
 		15360.0f / 302702400 / (dx * dx),
 		-735.0f / 302702400 / (dx * dx)
 	};
-	const int nby = (int)((float)(ny - 16) / blocksize_y) +
-	    (int)(((ny - 16) % blocksize_y) != 0);
 	const int nbx = (int)((float)(nxi) / blocksize_x) +
 	    (int)(((nxi) % blocksize_x) != 0);
 
 	for (step = 0; step < num_steps; step++) {
 		inner(f, fp, nx, ny, nxi, model_padded2_dt2, sources, sources_x,
 		      sources_y, num_sources, source_len, fd_coeff, step,
-		      blocksize_y, blocksize_x, nby, nbx);
+		      blocksize_x, nbx);
 
 		tmp = f;
 		f = fp;

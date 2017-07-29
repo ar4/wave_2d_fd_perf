@@ -2,10 +2,10 @@
 from timeit import repeat
 import numpy as np
 import pandas as pd
-from wave_2d_fd_perf.propagators import (VC8a_Ofast_gcc, VC9a_Ofast_gcc, VC9b_Ofast_gcc, VC10a_Ofast_gcc)
+from wave_2d_fd_perf.propagators import (VC8a_Ofast_gcc, VC9a_Ofast_gcc, VC10a_Ofast_gcc)
 from wave_2d_fd_perf.test_wave_2d_fd_perf import ricker
 
-def run_timing_model_size(num_repeat=10, num_steps=10, model_sizes=range(200, 1200, 200)):
+def run_timing_model_size(num_repeat=10, num_steps=10, model_sizes=range(200, 1200, 200), align=None):
     """Time implementations as model size varies."""
 
     versions = _versions()
@@ -14,7 +14,7 @@ def run_timing_model_size(num_repeat=10, num_steps=10, model_sizes=range(200, 12
 
     for N in model_sizes:
         model = _make_model(N, num_steps)
-        times = _time_versions(versions, model, num_repeat, times)
+        times = _time_versions(versions, model, num_repeat, times, align)
 
     return times
 
@@ -23,7 +23,6 @@ def _versions():
     """Return a list of versions to be timed."""
     return [{'class': VC8a_Ofast_gcc, 'name': 'C v8a (gcc, -Ofast)'},
             {'class': VC9a_Ofast_gcc, 'name': 'C v9a (gcc, -Ofast)'},
-            {'class': VC9b_Ofast_gcc, 'name': 'C v9b (gcc, -Ofast)'},
             {'class': VC10a_Ofast_gcc, 'name': 'C v10a (gcc, -Ofast)'}]
 
 
@@ -45,7 +44,7 @@ def _make_model(N, nsteps):
             'sy': np.array([sy])}
 
 
-def _time_versions(versions, model, num_repeat, dataframe):
+def _time_versions(versions, model, num_repeat, dataframe, align=None):
     """Loop over versions and append the timing results to the dataframe."""
     num_steps = model['nsteps']
     model_size = len(model['model'])
@@ -53,7 +52,7 @@ def _time_versions(versions, model, num_repeat, dataframe):
         for blocksize_y in _blocksizes():
             for blocksize_x in _blocksizes():
                 time = _time_version(v['class'], model,
-                                     blocksize_y, blocksize_x, num_repeat)
+                                     blocksize_y, blocksize_x, num_repeat, align)
                 dataframe = dataframe.append({'version': v['name'],
                                               'blocksize_y': blocksize_y,
                                               'blocksize_x': blocksize_x,
@@ -63,9 +62,9 @@ def _time_versions(versions, model, num_repeat, dataframe):
     return dataframe
 
 
-def _time_version(version, model, blocksize_y, blocksize_x, num_repeat):
+def _time_version(version, model, blocksize_y, blocksize_x, num_repeat, align=None):
     """Time a particular version."""
-    v = version(model['model'], blocksize_y, blocksize_x, model['dx'], model['dt'])
+    v = version(model['model'], blocksize_y, blocksize_x, model['dx'], model['dt'], align)
 
     def closure():
         """Closure over variables so they can be used in repeat below."""
