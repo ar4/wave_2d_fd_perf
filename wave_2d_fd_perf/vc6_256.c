@@ -1,10 +1,10 @@
 #include <omp.h>
-static void inner(const float *restrict const f,
-		  float *restrict const fp,
+static void inner(const float *restrict const f0,
+		  float *restrict const fp0,
 		  const int nx,
 		  const int ny,
 	  	  const int nxi,
-		  const float *restrict const model_padded2_dt2,
+		  const float *restrict const model_padded2_dt20,
 		  const float *restrict const sources,
 		  const int *restrict const sources_x,
 		  const int *restrict const sources_y,
@@ -17,10 +17,13 @@ static void inner(const float *restrict const f,
 	int sx;
 	int sy;
 	float f_xx;
+	const float *restrict const f = __builtin_assume_aligned(&(f0[8 * nx + 8]), 256);
+	float *restrict const fp = __builtin_assume_aligned(&(fp0[8 * nx + 8]), 256);
+	const float *restrict const model_padded2_dt2 = __builtin_assume_aligned(&(model_padded2_dt20[8 * nx + 8]), 256);
 
-	for (i = 8; i < ny - 8; i++) {
-#pragma omp parallel for default(none) private(f_xx) shared(i)
-		for (j = 8; j < nxi + 8; j++) {
+#pragma omp parallel for default(none) private(f_xx, j)
+	for (i = 0; i < ny - 16; i++) {
+		for (j = 0; j < nxi; j++) {
 			f_xx =
 			    (2 * fd_coeff[0] * f[i * nx + j] +
 			     fd_coeff[1] *
@@ -70,8 +73,8 @@ static void inner(const float *restrict const f,
 	}
 
 	for (i = 0; i < num_sources; i++) {
-		sx = sources_x[i] + 8;
-		sy = sources_y[i] + 8;
+		sx = sources_x[i];
+		sy = sources_y[i];
 		fp[sy * nx + sx] +=
 		    (model_padded2_dt2[sy * nx + sx] *
 		     sources[i * source_len + step]);

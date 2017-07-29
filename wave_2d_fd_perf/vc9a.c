@@ -3,6 +3,7 @@ static void inner_block(const float *restrict const f,
 			float *restrict const fp,
 			const int nx,
 			const int ny,
+	  		const int nxi,
 			const float *restrict const model_padded2_dt2,
 			const float *restrict const fd_coeff,
 			const int bj,
@@ -13,8 +14,8 @@ static void inner_block(const float *restrict const f,
 	int j;
 	float f_xx;
 	const int x_start = bj * blocksize_x + 8;
-	const int x_end = x_start + blocksize_x <= nx - 8 ?
-	    x_start + blocksize_x : nx - 8;
+	const int x_end = x_start + blocksize_x <= nxi + 8 ?
+	    x_start + blocksize_x : nxi + 8;
 
 	for (i = 8; i < ny - 8; i++) {
 		for (j = x_start; j < x_end; j++) {
@@ -71,6 +72,7 @@ static void inner(const float *restrict const f,
 		  float *restrict const fp,
 		  const int nx,
 		  const int ny,
+	  	  const int nxi,
 		  const float *restrict const model_padded2_dt2,
 		  const float *restrict const sources,
 		  const int *restrict const sources_x,
@@ -86,10 +88,10 @@ static void inner(const float *restrict const f,
 	int sx;
 	int sy;
 
-#pragma omp parallel for default(none) private(bi)
+#pragma omp parallel for default(none) private(bj)
 	for (bj = 0; bj < nbx; bj++) {
-			inner_block(f, fp, nx, ny, model_padded2_dt2, fd_coeff,
-				    bj, blocksize_x);
+			inner_block(f, fp, nx, ny, nxi, model_padded2_dt2,
+				    fd_coeff, bj, blocksize_x);
 	}
 
 	for (i = 0; i < num_sources; i++) {
@@ -106,6 +108,7 @@ void step(float *restrict f,
 	  float *restrict fp,
 	  const int nx,
 	  const int ny,
+	  const int nxi,
 	  const float *restrict const model_padded2_dt2,
 	  const float dx,
 	  const float *restrict const sources,
@@ -128,11 +131,11 @@ void step(float *restrict f,
 		15360.0f / 302702400 / (dx * dx),
 		-735.0f / 302702400 / (dx * dx)
 	};
-	const int nbx = (int)((float)(nx - 16) / blocksize_x) +
-	    (int)(((nx - 16) % blocksize_x) != 0);
+	const int nbx = (int)((float)(nxi) / blocksize_x) +
+	    (int)(((nxi) % blocksize_x) != 0);
 
 	for (step = 0; step < num_steps; step++) {
-		inner(f, fp, nx, ny, model_padded2_dt2, sources, sources_x,
+		inner(f, fp, nx, ny, nxi, model_padded2_dt2, sources, sources_x,
 		      sources_y, num_sources, source_len, fd_coeff, step,
 		      blocksize_x, nbx);
 

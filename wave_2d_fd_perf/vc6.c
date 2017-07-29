@@ -3,6 +3,7 @@ static void inner(const float *restrict const f,
 		  float *restrict const fp,
 		  const int nx,
 		  const int ny,
+	  	  const int nxi,
 		  const float *restrict const model_padded2_dt2,
 		  const float *restrict const sources,
 		  const int *restrict const sources_x,
@@ -19,7 +20,7 @@ static void inner(const float *restrict const f,
 
 #pragma omp parallel for default(none) private(f_xx, j)
 	for (i = 8; i < ny - 8; i++) {
-		for (j = 8; j < nx - 8; j++) {
+		for (j = 8; j < nxi + 8; j++) {
 			f_xx =
 			    (2 * fd_coeff[0] * f[i * nx + j] +
 			     fd_coeff[1] *
@@ -82,6 +83,7 @@ void step(float *restrict f,
 	  float *restrict fp,
 	  const int nx,
 	  const int ny,
+	  const int nxi,
 	  const float *restrict const model_padded2_dt2,
 	  const float dx,
 	  const float *restrict const sources,
@@ -105,7 +107,7 @@ void step(float *restrict f,
 	};
 
 	for (step = 0; step < num_steps; step++) {
-		inner(f, fp, nx, ny, model_padded2_dt2, sources, sources_x,
+		inner(f, fp, nx, ny, nxi, model_padded2_dt2, sources, sources_x,
 		      sources_y, num_sources, source_len, fd_coeff, step);
 
 		tmp = f;

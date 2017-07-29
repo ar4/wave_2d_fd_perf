@@ -2,6 +2,7 @@ void step(float *restrict f,
 	  float *restrict fp,
 	  const int nx,
 	  const int ny,
+	  const int nxi,
 	  const float *restrict const model_padded2_dt2,
 	  const float dx,
 	  const float *restrict const sources,
@@ -31,7 +32,7 @@ void step(float *restrict f,
 
 	for (step = 0; step < num_steps; step++) {
 		for (i = 8; i < ny - 8; i++) {
-			for (j = 8; j < nx - 8; j++) {
+			for (j = 8; j < nxi + 8; j++) {
 				f_xx =
 				    2 * fd_coeff[0] * f[i * nx + j] +
 				    fd_coeff[1] *

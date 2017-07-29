@@ -1,26 +1,24 @@
 #include <omp.h>
-static void inner(const float *restrict const f,
-		  float *restrict const fp,
-		  const int nx,
-		  const int ny,
-	  	  const int nxi,
-		  const float *restrict const model_padded2_dt2,
-		  const float *restrict const sources,
-		  const int *restrict const sources_x,
-		  const int *restrict const sources_y,
-		  const int num_sources, const int source_len,
-		  const float *restrict const fd_coeff, const int step)
+static void inner_block(const float *restrict const f,
+			float *restrict const fp,
+			const int nx,
+			const int ny,
+	  		const int nxi,
+			const float *restrict const model_padded2_dt2,
+			const float *restrict const fd_coeff,
+			const int bj,
+			const int blocksize_x)
 {
 
 	int i;
 	int j;
-	int sx;
-	int sy;
 	float f_xx;
+	const int x_start = bj * blocksize_x + 8;
+	const int x_end = x_start + blocksize_x <= nxi + 8 ?
+	    x_start + blocksize_x : nxi + 8;
 
 	for (i = 8; i < ny - 8; i++) {
-#pragma omp parallel for default(none) private(f_xx) shared(i)
-		for (j = 8; j < nxi + 8; j++) {
+		for (j = x_start; j < x_end; j++) {
 			f_xx =
 			    (2 * fd_coeff[0] * f[i * nx + j] +
 			     fd_coeff[1] *
@@ -68,6 +66,33 @@ static void inner(const float *restrict const f,
 			     2 * f[i * nx + j] - fp[i * nx + j]);
 		}
 	}
+}
+
+static void inner(const float *restrict const f,
+		  float *restrict const fp,
+		  const int nx,
+		  const int ny,
+	  	  const int nxi,
+		  const float *restrict const model_padded2_dt2,
+		  const float *restrict const sources,
+		  const int *restrict const sources_x,
+		  const int *restrict const sources_y,
+		  const int num_sources, const int source_len,
+		  const float *restrict const fd_coeff, const int step,
+		  const int blocksize_x,
+		  const int nbx)
+{
+
+	int i;
+	int bj;
+	int sx;
+	int sy;
+
+#pragma omp parallel for default(none) private(bj) schedule(static, 1)
+	for (bj = 0; bj < nbx; bj++) {
+			inner_block(f, fp, nx, ny, nxi, model_padded2_dt2,
+				    fd_coeff, bj, blocksize_x);
+	}
 
 	for (i = 0; i < num_sources; i++) {
 		sx = sources_x[i] + 8;
@@ -89,7 +114,8 @@ void step(float *restrict f,
 	  const float *restrict const sources,
 	  const int *restrict const sources_x,
 	  const int *restrict const sources_y,
-	  const int num_sources, const int source_len, const int num_steps)
+	  const int num_sources, const int source_len, const int num_steps,
+	  const int blocksize_x)
 {
 
 	int step;
@@ -105,10 +131,13 @@ void step(float *restrict f,
 		15360.0f / 302702400 / (dx * dx),
 		-735.0f / 302702400 / (dx * dx)
 	};
+	const int nbx = (int)((float)(nxi) / blocksize_x) +
+	    (int)(((nxi) % blocksize_x) != 0);
 
 	for (step = 0; step < num_steps; step++) {
 		inner(f, fp, nx, ny, nxi, model_padded2_dt2, sources, sources_x,
-		      sources_y, num_sources, source_len, fd_coeff, step);
+		      sources_y, num_sources, source_len, fd_coeff, step,
+		      blocksize_x, nbx);
 
 		tmp = f;
 		f = fp;

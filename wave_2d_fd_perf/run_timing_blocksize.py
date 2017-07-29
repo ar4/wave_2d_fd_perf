@@ -2,7 +2,7 @@
 from timeit import repeat
 import numpy as np
 import pandas as pd
-from wave_2d_fd_perf.propagators import (VC8a_Ofast_gcc, VC9a_Ofast_gcc, VC10a_Ofast_gcc)
+from wave_2d_fd_perf.propagators import (VC8a_Ofast_gcc, VC9a_Ofast_gcc, VC9b_Ofast_gcc, VC10a_Ofast_gcc)
 from wave_2d_fd_perf.test_wave_2d_fd_perf import ricker
 
 def run_timing_model_size(num_repeat=10, num_steps=10, model_sizes=range(200, 1200, 200)):
@@ -23,6 +23,7 @@ def _versions():
     """Return a list of versions to be timed."""
     return [{'class': VC8a_Ofast_gcc, 'name': 'C v8a (gcc, -Ofast)'},
             {'class': VC9a_Ofast_gcc, 'name': 'C v9a (gcc, -Ofast)'},
+            {'class': VC9b_Ofast_gcc, 'name': 'C v9b (gcc, -Ofast)'},
             {'class': VC10a_Ofast_gcc, 'name': 'C v10a (gcc, -Ofast)'}]
 
 
