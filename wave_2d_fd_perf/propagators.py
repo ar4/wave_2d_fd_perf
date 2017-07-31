@@ -342,13 +342,13 @@ class VC8a_Ofast_gcc(VC_blocksize):
 class VC9a_Ofast_gcc(VC_blocksize):
     """VC9, variable blocksize."""
     def __init__(self, model, blocksize_y, blocksize_x, dx, dt=None, align=None):
-        super(VC9a_Ofast_gcc, self).__init__('libvc9a_Ofast_gcc', model, blocksize_y, blocksize_x, dx, dt, align)
+        super(VC9a_Ofast_gcc, self).__init__('libvc9a_Ofast_gcc', model, None, blocksize_x, dx, dt, align)
 
 
 class VC10a_Ofast_gcc(VC_blocksize):
     """VC10, variable blocksize."""
     def __init__(self, model, blocksize_y, blocksize_x, dx, dt=None, align=None):
-        super(VC10a_Ofast_gcc, self).__init__('libvc10a_Ofast_gcc', model, blocksize_y, blocksize_x, dx, dt, align)
+        super(VC10a_Ofast_gcc, self).__init__('libvc10a_Ofast_gcc', model, None, blocksize_x, dx, dt, align)
 
 
 class VC11_Ofast_gcc(VC):
