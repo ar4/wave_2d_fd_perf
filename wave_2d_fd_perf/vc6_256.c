@@ -17,9 +17,15 @@ static void inner(const float *restrict const f0,
 	int sx;
 	int sy;
 	float f_xx;
+#ifdef __GNUC__
 	const float *restrict const f = __builtin_assume_aligned(&(f0[8 * nx + 8]), 256);
 	float *restrict const fp = __builtin_assume_aligned(&(fp0[8 * nx + 8]), 256);
 	const float *restrict const model_padded2_dt2 = __builtin_assume_aligned(&(model_padded2_dt20[8 * nx + 8]), 256);
+#else
+	const float *restrict const f = &(f0[8 * nx + 8]);
+	float *restrict const fp = &(fp0[8 * nx + 8]);
+	const float *restrict const model_padded2_dt2 = &(model_padded2_dt20[8 * nx + 8]);
+#endif
 
 #pragma omp parallel for default(none) private(f_xx, j)
 	for (i = 0; i < ny - 16; i++) {
