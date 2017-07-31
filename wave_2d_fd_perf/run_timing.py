@@ -89,8 +89,8 @@ def _time_versions(versions, model, num_repeat, dataframe, align=None):
     model_size = len(model['model'])
     for v in versions:
 
-        if align and 'align' in v.keys():
-            if (align % v['align']) == 0:
+        if 'align' in v.keys():
+            if ((align) and (align % v['align']) == 0):
                 ok_to_run = True
             else:
                 ok_to_run = False
