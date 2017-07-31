@@ -25,7 +25,6 @@ class Propagator(object):
             numbytes = m * n * dtype.itemsize
             a = np.zeros(numbytes + (align - 1), dtype=np.uint8)
             data_align = (a.ctypes.data + k * dtype.itemsize) % align
-            print(data_align, a.ctypes.data + k * dtype.itemsize, a.ctypes.data + k * dtype.itemsize, k * dtype.itemsize)
             offset = 0 if data_align == 0 else (align - data_align)
             return a[offset : offset + numbytes].view(dtype).reshape(m, n)
 
@@ -66,6 +65,7 @@ class VC(Propagator):
     """C implementations."""
     def __init__(self, libname, model, dx, dt=None, align=None):
         super(VC, self).__init__(model, dx, dt, align)
+        #print(hex(self.current_wavefield.ctypes.data + 8 * np.dtype(np.float32).itemsize), flush=True)
 
         self._libvc = np.ctypeslib.load_library(libname, wave_2d_fd_perf.__path__[0])
         self._libvc.step.argtypes = \
@@ -151,7 +151,7 @@ class VF(Propagator):
         """Propagate wavefield."""
 
         self.fstep(self.current_wavefield.T, self.previous_wavefield.T,
-                         self.model_padded2_dt2.T,
+                         self.model_padded2_dt2.T, self.nx,
                          self.dx,
                          sources.T, sources_x, sources_y, num_steps)
 

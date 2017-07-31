@@ -74,7 +74,7 @@ contains
                 num_sources = size(sources, dim=2)
 
                 do i = 9, ny - 8
-                do j = 9, nxi + 9
+                do j = 9, nxi + 8
                 fp(j, i) = (model_padded2_dt2(j, i) *                  &
                         (2 * fd_coeff(1) * f(j, i) +                   &
                         fd_coeff(2) *                                  &

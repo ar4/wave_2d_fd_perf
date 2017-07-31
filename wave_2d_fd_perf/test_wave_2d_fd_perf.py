@@ -116,12 +116,14 @@ def test_allclose(model_two, versions):
     """Verify that all implementations produce similar results."""
 
     for v in versions[1:]:
-        print(v.__name__, flush=True)
+        print(v.__name__)
         _test_version(v, model_two, atol=5e-4)
+        print(v.__name__, 'align 256')
+        _test_version(v, model_two, atol=5e-4, align=256)
 
 
-def _test_version(version, model, atol):
+def _test_version(version, model, atol, align=None):
     """Run the test for one implementation."""
-    v = version(model['model'], model['dx'], model['dt'])
+    v = version(model['model'], model['dx'], model['dt'], align=align)
     y = v.step(model['nsteps'], model['sources'], model['sx'], model['sy'])
     assert np.allclose(y, model['expected'], atol=atol)

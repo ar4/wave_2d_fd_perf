@@ -76,7 +76,7 @@ contains
                 num_sources = size(sources, dim=2)
 
                 do i = 9, ny - 8
-                do j = 9, nxi + 9
+                do j = 9, nxi + 8
                 f_xx = 2 * fd_coeff(1) * f(j, i)
                 do k = 1, 8
                 f_xx = f_xx + fd_coeff(k + 1) *                        &

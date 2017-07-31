@@ -71,7 +71,7 @@ contains
                 ny = size(f, dim=2)
                 num_sources = size(sources, dim=2)
 
-                forall (i = 9 : ny - 8, j = 9 : nxi + 9)
+                forall (i = 9 : ny - 8, j = 9 : nxi + 8)
                         fp(j, i) = step_update(f, fp(j, i),            &
                                 model_padded2_dt2(j, i), i, j, fd_coeff)
                 end forall
