@@ -14,7 +14,7 @@ class Propagator(object):
        If align is not specified, the default value "1" will be used,
        which means no alignment will be done.
     """
-    def __init__(self, model, dx, dt=None, align=1):
+    def __init__(self, model, dx, dt=None, align=None):
 
         def alloc_aligned(m, n, k, dtype, align):
             """
@@ -23,11 +23,14 @@ class Propagator(object):
         
             dtype = np.dtype(dtype)
             numbytes = m * n * dtype.itemsize
-            a = np.empty(numbytes + (align - 1), dtype=np.uint8)
+            a = np.zeros(numbytes + (align - 1), dtype=np.uint8)
             data_align = (a.ctypes.data + k * dtype.itemsize) % align
             print(data_align, a.ctypes.data + k * dtype.itemsize, a.ctypes.data + k * dtype.itemsize, k * dtype.itemsize)
             offset = 0 if data_align == 0 else (align - data_align)
             return a[offset : offset + numbytes].view(dtype).reshape(m, n)
+
+        if align == None:
+            align = 1
 
         self.nx = model.shape[1]
         self.ny = model.shape[0]
@@ -41,8 +44,8 @@ class Propagator(object):
 
         # calculate trailing padding in x dimension so that row
         # length is a multiple of align, at least 8
-        nx_padded = np.ceil((self.nx + 2 * 8)/align) * align
-        x_end_pad = nx_padded - self.nx + 8
+        nx_padded = int(np.ceil((self.nx + 2 * 8)/align)) * align
+        x_end_pad = nx_padded - (self.nx + 8)
 
         self.nx_padded = self.nx + 8 + x_end_pad
         self.ny_padded = self.ny + 2 * 8

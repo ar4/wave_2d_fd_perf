@@ -4,12 +4,13 @@ module vf1
 
 contains
 
-        subroutine step(f1, f2, model_padded2_dt2, dx, sources,        &
+        subroutine step(f1, f2, model_padded2_dt2, nxi, dx, sources,   &
                         sources_x, sources_y, num_steps)
 
                 real, intent (in out), dimension (:, :) :: f1
                 real, intent (in out), dimension (:, :) :: f2
                 real, intent (in), dimension (:, :) :: model_padded2_dt2
+                integer, intent (in) :: nxi
                 real, intent (in) :: dx
                 real, intent (in), dimension (:, :) :: sources
                 integer, intent (in), dimension (:) :: sources_x
@@ -36,11 +37,11 @@ contains
                 do step_idx = 1, num_steps
                 even = (mod (step_idx, 2) == 0)
                 if (even) then
-                        call step_inner(f2, f1, model_padded2_dt2,     &
+                        call step_inner(f2, f1, model_padded2_dt2, nxi,&
                                 sources, sources_x, sources_y,         &
                                 step_idx, fd_coeff)
                 else
-                        call step_inner(f1, f2, model_padded2_dt2,     &
+                        call step_inner(f1, f2, model_padded2_dt2, nxi,&
                                 sources, sources_x, sources_y,         &
                                 step_idx, fd_coeff)
                 end if
@@ -49,12 +50,13 @@ contains
         end subroutine step
 
 
-        subroutine step_inner(f, fp, model_padded2_dt2, sources,       &
+        subroutine step_inner(f, fp, model_padded2_dt2, nxi, sources,  &
                         sources_x, sources_y, step_idx, fd_coeff)
 
                 real, intent (in), dimension (:, :) :: f
                 real, intent (in out), dimension (:, :) :: fp
                 real, intent (in), dimension (:, :) :: model_padded2_dt2
+                integer, intent (in) :: nxi
                 real, intent (in), dimension (:, :) :: sources
                 integer, intent (in), dimension (:) :: sources_x
                 integer, intent (in), dimension (:) :: sources_y
@@ -66,17 +68,15 @@ contains
                 integer :: k
                 integer :: sx
                 integer :: sy
-                integer :: nx
                 integer :: ny
                 integer :: num_sources
                 real :: f_xx
 
-                nx = size(f, dim=1)
                 ny = size(f, dim=2)
                 num_sources = size(sources, dim=2)
 
                 do i = 9, ny - 8
-                do j = 9, nx - 8
+                do j = 9, nxi + 9
                 f_xx = 2 * fd_coeff(1) * f(j, i)
                 do k = 1, 8
                 f_xx = f_xx + fd_coeff(k + 1) *                        &

@@ -116,7 +116,7 @@ def test_allclose(model_two, versions):
     """Verify that all implementations produce similar results."""
 
     for v in versions[1:]:
-        print(v.__name__)
+        print(v.__name__, flush=True)
         _test_version(v, model_two, atol=5e-4)
 
 
