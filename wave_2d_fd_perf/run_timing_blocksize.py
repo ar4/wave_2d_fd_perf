@@ -5,16 +5,23 @@ import pandas as pd
 from wave_2d_fd_perf.propagators import (VC8a_Ofast_gcc, VC9a_Ofast_gcc, VC10a_Ofast_gcc)
 from wave_2d_fd_perf.test_wave_2d_fd_perf import ricker
 
-def run_timing_model_size(num_repeat=10, num_steps=10, model_sizes=range(200, 1200, 200), align=None):
+def run_timing_model_size(num_repeat=10, num_steps=10, model_sizes=range(200, 1200, 200), versions=None, blocksizes_y=None, blocksizes_x=None, align=None):
     """Time implementations as model size varies."""
 
-    versions = _versions()
+    if versions == None:
+        versions = _versions()
+
+    if blocksizes_y == None:
+        blocksizes_y = _blocksizes()
+
+    if blocksizes_x == None:
+        blocksizes_x = _blocksizes()
 
     times = pd.DataFrame(columns=['version', 'blocksize_y', 'blocksize_x', 'num_steps', 'model_size', 'time'])
 
     for N in model_sizes:
         model = _make_model(N, num_steps)
-        times = _time_versions(versions, model, num_repeat, times, align)
+        times = _time_versions(versions, blocksizes_y, blocksizes_x, model, num_repeat, times, align)
 
     return times
 
@@ -45,13 +52,13 @@ def _make_model(N, nsteps):
             'sy': np.array([sy])}
 
 
-def _time_versions(versions, model, num_repeat, dataframe, align=None):
+def _time_versions(versions, blocksizes_y, blocksizes_x, model, num_repeat, dataframe, align=None):
     """Loop over versions and append the timing results to the dataframe."""
     num_steps = model['nsteps']
     model_size = len(model['model'])
     for v in versions:
-        for blocksize_y in _blocksizes():
-            for blocksize_x in _blocksizes():
+        for blocksize_y in blocksizes_y:
+            for blocksize_x in blocksizes_x:
                 time = _time_version(v['class'], model,
                                      blocksize_y, blocksize_x, num_repeat, align)
                 dataframe = dataframe.append({'version': v['name'],
