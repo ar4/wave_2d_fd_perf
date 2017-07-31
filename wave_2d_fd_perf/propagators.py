@@ -382,6 +382,12 @@ class VC14_Ofast_gcc(VC_fxx):
         super(VC14_Ofast_gcc, self).__init__('libvc14_Ofast_gcc', model, dx, dt, align)
 
 
+class VC15_Ofast_gcc(VC):
+    """V2 with ivdep pragma."""
+    def __init__(self, model, dx, dt=None, align=None):
+        super(VC15_Ofast_gcc, self).__init__('libvc15_Ofast_gcc', model, dx, dt, align)
+
+
 class VF1_O2_gcc(VF):
     """A simple Fortran implementation."""
     def __init__(self, model, dx, dt=None, align=None):
