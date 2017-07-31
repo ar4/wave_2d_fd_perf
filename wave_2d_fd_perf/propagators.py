@@ -7,6 +7,18 @@ import wave_2d_fd_perf
 from wave_2d_fd_perf import libvf1_O2_gcc, libvf1_O3_gcc, libvf1_Ofast_gcc, libvf2_Ofast_gcc, libvf3_Ofast_gcc, libvf4_Ofast_gcc, libvf5_Ofast_gcc, libvf6_Ofast_gcc, libvf6_Ofast_autopar_gcc
 
 
+def alloc_aligned(m, n, k, dtype, align):
+    """
+    Allocate m x n elements of type dtype so kth element has alignment align.
+    """
+
+    dtype = np.dtype(dtype)
+    numbytes = m * n * dtype.itemsize
+    a = np.zeros(numbytes + (align - 1), dtype=np.uint8)
+    data_align = (a.ctypes.data + k * dtype.itemsize) % align
+    offset = 0 if data_align == 0 else (align - data_align)
+    return a[offset : offset + numbytes].view(dtype).reshape(m, n)
+
 
 class Propagator(object):
     """A finite difference propagator for the 2D wave equation.
@@ -15,18 +27,6 @@ class Propagator(object):
        which means no alignment will be done.
     """
     def __init__(self, model, dx, dt=None, align=None):
-
-        def alloc_aligned(m, n, k, dtype, align):
-            """
-            Allocate m x n elements of type dtype so kth element has alignment align.
-            """
-        
-            dtype = np.dtype(dtype)
-            numbytes = m * n * dtype.itemsize
-            a = np.zeros(numbytes + (align - 1), dtype=np.uint8)
-            data_align = (a.ctypes.data + k * dtype.itemsize) % align
-            offset = 0 if data_align == 0 else (align - data_align)
-            return a[offset : offset + numbytes].view(dtype).reshape(m, n)
 
         if align == None:
             align = 1
@@ -142,6 +142,56 @@ class VC_blocksize(VC):
         return self.current_wavefield[8 : 8 + self.ny, 8 : 8 + self.nx]
 
 
+class VC_fxx(VC):
+    """C implementations with allocated f_xx."""
+    def __init__(self, libname, model, dx, dt=None, align=None):
+        super(VC_fxx, self).__init__(libname, model, dx, dt, align)
+        if align == None:
+            align = 1
+        self.f_xx = alloc_aligned(self.ny_padded, self.nx_padded, 8, np.float32, align);
+        self._libvc.step.argtypes = \
+                [np.ctypeslib.ndpointer(dtype=np.float32, ndim=2,
+                                        shape=(self.ny_padded, self.nx_padded),
+                                        flags=('C_CONTIGUOUS', 'WRITEABLE')),
+                 np.ctypeslib.ndpointer(dtype=np.float32, ndim=2,
+                                        shape=(self.ny_padded, self.nx_padded),
+                                        flags=('C_CONTIGUOUS', 'WRITEABLE')),
+                 np.ctypeslib.ndpointer(dtype=np.float32, ndim=2,
+                                        shape=(self.ny_padded, self.nx_padded),
+                                        flags=('C_CONTIGUOUS', 'WRITEABLE')),
+                 c_int, c_int, c_int,
+                 np.ctypeslib.ndpointer(dtype=np.float32, ndim=2,
+                                        shape=(self.ny_padded, self.nx_padded),
+                                        flags=('C_CONTIGUOUS')),
+                 c_float,
+                 np.ctypeslib.ndpointer(dtype=np.float32, ndim=2,
+                                        flags=('C_CONTIGUOUS')),
+                 np.ctypeslib.ndpointer(dtype=np.int, ndim=1,
+                                        flags=('C_CONTIGUOUS')),
+                 np.ctypeslib.ndpointer(dtype=np.int, ndim=1,
+                                        flags=('C_CONTIGUOUS')),
+                 c_int, c_int, c_int]
+
+    def step(self, num_steps, sources=None, sources_x=None, sources_y=None):
+        """Propagate wavefield."""
+
+        num_sources = sources.shape[0]
+        source_len = sources.shape[1]
+        self._libvc.step(self.current_wavefield, self.previous_wavefield,
+                         self.f_xx,
+                         self.nx_padded, self.ny_padded, self.nx,
+                         self.model_padded2_dt2, self.dx,
+                         sources, sources_x, sources_y, num_sources, source_len,
+                         num_steps)
+
+        if num_steps%2 != 0:
+            tmp = self.current_wavefield
+            self.current_wavefield = self.previous_wavefield
+            self.previous_wavefield = tmp
+
+        return self.current_wavefield[8 : 8 + self.ny, 8 : 8 + self.nx]
+
+
 class VF(Propagator):
     """Fortran implementations."""
     def __init__(self, model, dx, dt=None, align=None):
@@ -247,6 +297,12 @@ class VC6_Ofast_gcc(VC):
         super(VC6_Ofast_gcc, self).__init__('libvc6_Ofast_gcc', model, dx, dt, align)
 
 
+class VC6_Ofast_256_gcc(VC):
+    """VC6 with 256 align specified in code."""
+    def __init__(self, model, dx, dt=None, align=None):
+        super(VC6_Ofast_256_gcc, self).__init__('libvc6_Ofast_256_gcc', model, dx, dt, align)
+
+
 class VC6_Ofast_256b_gcc(VC):
     """VC6 with 256-bit alignment specified in code."""
     def __init__(self, model, dx, dt=None, align=None):
@@ -306,6 +362,24 @@ class VC11_Ofast_gcc(VC):
         sources_x_sort = sources_x[srcsort]
         sources_y_sort = sources_y[srcsort]
         return super(VC11_Ofast_gcc, self).step(num_steps, sources_sort, sources_x_sort, sources_y_sort)
+
+
+class VC12_Ofast_gcc(VC_fxx):
+    """V3 with separate loop for f_xx."""
+    def __init__(self, model, dx, dt=None, align=None):
+        super(VC12_Ofast_gcc, self).__init__('libvc12_Ofast_gcc', model, dx, dt, align)
+
+
+class VC13_Ofast_gcc(VC_fxx):
+    """V12 with f_xx loop over single index."""
+    def __init__(self, model, dx, dt=None, align=None):
+        super(VC13_Ofast_gcc, self).__init__('libvc13_Ofast_gcc', model, dx, dt, align)
+
+
+class VC14_Ofast_gcc(VC_fxx):
+    """V13 with BLAS."""
+    def __init__(self, model, dx, dt=None, align=None):
+        super(VC14_Ofast_gcc, self).__init__('libvc14_Ofast_gcc', model, dx, dt, align)
 
 
 class VF1_O2_gcc(VF):
