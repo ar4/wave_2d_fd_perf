@@ -30,6 +30,7 @@ def _blocksizes():
     """Return a list of blocksizes to try."""
     return [8, 16, 32, 64, 128]
 
+
 def _make_model(N, nsteps):
     """Create a model with a given number of elements and time steps."""
     model = np.random.random([N, N]).astype(np.float32) * 3000 + 1500
