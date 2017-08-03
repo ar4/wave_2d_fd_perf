@@ -20,10 +20,11 @@ def run_timing_num_steps(num_repeat=10, num_steps=range(0, 110, 10), model_size=
     return times
 
 
-def run_timing_model_size(num_repeat=10, num_steps=10, model_sizes=range(200, 2200, 200), align=None):
+def run_timing_model_size(num_repeat=10, num_steps=10, model_sizes=range(200, 2200, 200), versions=None, align=None):
     """Time implementations as model size varies."""
 
-    versions = _versions()
+    if versions == None:
+        versions = _versions()
 
     times = pd.DataFrame(columns=['version', 'num_steps', 'model_size', 'time'])
 
