@@ -2,7 +2,7 @@
 from timeit import repeat
 import numpy as np
 import pandas as pd
-from wave_2d_fd_perf.propagators import (VC1_O2_gcc, VC1_O3_gcc, VC1_Ofast_gcc, VC2_O2_gcc, VC2_O3_gcc, VC2_Ofast_gcc, VC3_Ofast_gcc, VC3_Ofast_unroll_gcc, VC4_Ofast_gcc, VC4_Ofast_extra1_gcc, VC4_Ofast_extra2_gcc, VC4_Ofast_extra3_gcc, VC5_Ofast_gcc, VC6_Ofast_gcc, VC6_Ofast_256_gcc, VC7_Ofast_gcc, VC8_Ofast_gcc, VC9_Ofast_gcc, VC10_Ofast_gcc, VC11_Ofast_gcc, VC12_Ofast_gcc, VC13_Ofast_gcc, VC14_Ofast_gcc, VC15_Ofast_gcc, VF1_O2_gcc, VF1_O3_gcc, VF1_Ofast_gcc, VF2_Ofast_gcc, VF3_Ofast_gcc, VF4_Ofast_gcc, VF5_Ofast_gcc, VF6_Ofast_gcc, VF6_Ofast_autopar_gcc)
+from wave_2d_fd_perf.propagators import (VC1_O2_gcc, VC1_O3_gcc, VC1_Ofast_gcc, VC2_O2_gcc, VC2_O3_gcc, VC2_Ofast_gcc, VC3_Ofast_gcc, VC3_Ofast_unroll_gcc, VC4_Ofast_gcc, VC4_Ofast_extra1_gcc, VC4_Ofast_extra2_gcc, VC4_Ofast_extra3_gcc, VC5_Ofast_gcc, VC6_Ofast_gcc, VC7_Ofast_gcc, VC8_Ofast_gcc, VC9_Ofast_gcc, VC10_Ofast_gcc, VC11_Ofast_gcc, VC12_Ofast_gcc, VC13_Ofast_gcc, VC14_Ofast_gcc, VC15_Ofast_gcc, VF1_O2_gcc, VF1_O3_gcc, VF1_Ofast_gcc, VF2_Ofast_gcc, VF3_Ofast_gcc, VF4_Ofast_gcc, VF5_Ofast_gcc, VF6_Ofast_gcc, VF6_Ofast_autopar_gcc)
 from wave_2d_fd_perf.test_wave_2d_fd_perf import ricker
 
 def run_timing_num_steps(num_repeat=10, num_steps=range(0, 110, 10), model_size=1000, versions=None, align=None):
@@ -15,6 +15,21 @@ def run_timing_num_steps(num_repeat=10, num_steps=range(0, 110, 10), model_size=
 
     for nsteps in num_steps:
         model = _make_model(model_size, nsteps)
+        times = _time_versions(versions, model, num_repeat, times, align)
+
+    return times
+
+
+def run_timing_model_size(num_repeat=10, num_steps=10, model_sizes=range(200, 2200, 200), versions=None, align=None):
+    """Time implementations as model size varies."""
+
+    if versions == None:
+        versions = _versions()
+
+    times = pd.DataFrame(columns=['version', 'num_steps', 'model_size', 'time'])
+
+    for N in model_sizes:
+        model = _make_model(N, num_steps)
         times = _time_versions(versions, model, num_repeat, times, align)
 
     return times
@@ -51,7 +66,6 @@ def _versions():
             {'class': VC4_Ofast_extra3_gcc, 'name': 'C v4 (gcc, -Ofast opt3)'},
             {'class': VC5_Ofast_gcc, 'name': 'C v5 (gcc, -Ofast)'},
             {'class': VC6_Ofast_gcc, 'name': 'C v6 (gcc, -Ofast)'},
-            {'class': VC6_Ofast_256_gcc, 'name': 'C v6 256 (gcc, -Ofast)', 'align': 256},
             {'class': VC7_Ofast_gcc, 'name': 'C v7 (gcc, -Ofast)'},
             {'class': VC8_Ofast_gcc, 'name': 'C v8 (gcc, -Ofast)'},
             {'class': VC9_Ofast_gcc, 'name': 'C v9 (gcc, -Ofast)'},
@@ -91,21 +105,11 @@ def _time_versions(versions, model, num_repeat, dataframe, align=None):
     num_steps = model['nsteps']
     model_size = len(model['model'])
     for v in versions:
-
-        if 'align' in v.keys():
-            if ((align) and (align % v['align']) == 0):
-                ok_to_run = True
-            else:
-                ok_to_run = False
-        else:
-            ok_to_run = True
-
-        if ok_to_run:
-            time = _time_version(v['class'], model, num_repeat, align)
-            dataframe = dataframe.append({'version': v['name'],
-                                          'num_steps': num_steps,
-                                          'model_size': model_size,
-                                          'time': time}, ignore_index=True)
+        time = _time_version(v['class'], model, num_repeat, align)
+        dataframe = dataframe.append({'version': v['name'],
+                                      'num_steps': num_steps,
+                                      'model_size': model_size,
+                                      'time': time}, ignore_index=True)
     return dataframe
 
 
