@@ -43,7 +43,8 @@ class Propagator(object):
 
         # calculate trailing padding in x dimension so that row
         # length is a multiple of align, at least 8
-        nx_padded = int(np.ceil((self.nx + 2 * 8)/align)) * align
+        align32 = align / np.dtype(np.float32).itemsize # align in float size
+        nx_padded = int(np.ceil((self.nx + 2 * 8)/align32)) * align32
         x_end_pad = nx_padded - (self.nx + 8)
 
         self.nx_padded = self.nx + 8 + x_end_pad
