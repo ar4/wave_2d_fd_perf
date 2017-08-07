@@ -43,7 +43,7 @@ class Propagator(object):
 
         # calculate trailing padding in x dimension so that row
         # length is a multiple of align, at least 8
-        align32 = align / np.dtype(np.float32).itemsize # align in float size
+        align32 = int(np.ceil(align / np.dtype(np.float32).itemsize)) # align in float size
         nx_padded = int(np.ceil((self.nx + 2 * 8)/align32)) * align32
         x_end_pad = nx_padded - (self.nx + 8)
 
@@ -70,22 +70,22 @@ class VC(Propagator):
 
         self._libvc = np.ctypeslib.load_library(libname, wave_2d_fd_perf.__path__[0])
         self._libvc.step.argtypes = \
-                [np.ctypeslib.ndpointer(dtype=np.float32, ndim=2,
+                [np.ctypeslib.ndpointer(dtype=c_float, ndim=2,
                                         shape=(self.ny_padded, self.nx_padded),
                                         flags=('C_CONTIGUOUS', 'WRITEABLE')),
-                 np.ctypeslib.ndpointer(dtype=np.float32, ndim=2,
+                 np.ctypeslib.ndpointer(dtype=c_float, ndim=2,
                                         shape=(self.ny_padded, self.nx_padded),
                                         flags=('C_CONTIGUOUS', 'WRITEABLE')),
                  c_int, c_int, c_int,
-                 np.ctypeslib.ndpointer(dtype=np.float32, ndim=2,
+                 np.ctypeslib.ndpointer(dtype=c_float, ndim=2,
                                         shape=(self.ny_padded, self.nx_padded),
                                         flags=('C_CONTIGUOUS')),
                  c_float,
-                 np.ctypeslib.ndpointer(dtype=np.float32, ndim=2,
+                 np.ctypeslib.ndpointer(dtype=c_float, ndim=2,
                                         flags=('C_CONTIGUOUS')),
-                 np.ctypeslib.ndpointer(dtype=np.int, ndim=1,
+                 np.ctypeslib.ndpointer(dtype=c_int, ndim=1,
                                         flags=('C_CONTIGUOUS')),
-                 np.ctypeslib.ndpointer(dtype=np.int, ndim=1,
+                 np.ctypeslib.ndpointer(dtype=c_int, ndim=1,
                                         flags=('C_CONTIGUOUS')),
                  c_int, c_int, c_int]
 
@@ -97,8 +97,9 @@ class VC(Propagator):
         self._libvc.step(self.current_wavefield, self.previous_wavefield,
                          self.nx_padded, self.ny_padded, self.nx,
                          self.model_padded2_dt2, self.dx,
-                         sources, sources_x, sources_y, num_sources, source_len,
-                         num_steps)
+                         sources,
+                         sources_x.astype(c_int), sources_y.astype(c_int),
+                         num_sources, source_len, num_steps)
 
         if num_steps%2 != 0:
             tmp = self.current_wavefield
@@ -125,13 +126,17 @@ class VC_blocksize(VC):
             self._libvc.step(self.current_wavefield, self.previous_wavefield,
                              self.nx_padded, self.ny_padded, self.nx,
                              self.model_padded2_dt2, self.dx,
-                             sources, sources_x, sources_y, num_sources, source_len,
+                             sources,
+                             sources_x.astype(c_int), sources_y.astype(c_int),
+                             num_sources, source_len,
                              num_steps, self.blocksize_y, self.blocksize_x)
         else:
             self._libvc.step(self.current_wavefield, self.previous_wavefield,
                              self.nx_padded, self.ny_padded, self.nx,
                              self.model_padded2_dt2, self.dx,
-                             sources, sources_x, sources_y, num_sources, source_len,
+                             sources,
+                             sources_x.astype(c_int), sources_y.astype(c_int),
+                             num_sources, source_len,
                              num_steps, self.blocksize_x)
 
 
@@ -151,25 +156,25 @@ class VC_fxx(VC):
             align = 1
         self.f_xx = alloc_aligned(self.ny_padded, self.nx_padded, 8, np.float32, align)
         self._libvc.step.argtypes = \
-                [np.ctypeslib.ndpointer(dtype=np.float32, ndim=2,
+                [np.ctypeslib.ndpointer(dtype=c_float, ndim=2,
                                         shape=(self.ny_padded, self.nx_padded),
                                         flags=('C_CONTIGUOUS', 'WRITEABLE')),
-                 np.ctypeslib.ndpointer(dtype=np.float32, ndim=2,
+                 np.ctypeslib.ndpointer(dtype=c_float, ndim=2,
                                         shape=(self.ny_padded, self.nx_padded),
                                         flags=('C_CONTIGUOUS', 'WRITEABLE')),
-                 np.ctypeslib.ndpointer(dtype=np.float32, ndim=2,
+                 np.ctypeslib.ndpointer(dtype=c_float, ndim=2,
                                         shape=(self.ny_padded, self.nx_padded),
                                         flags=('C_CONTIGUOUS', 'WRITEABLE')),
                  c_int, c_int, c_int,
-                 np.ctypeslib.ndpointer(dtype=np.float32, ndim=2,
+                 np.ctypeslib.ndpointer(dtype=c_float, ndim=2,
                                         shape=(self.ny_padded, self.nx_padded),
                                         flags=('C_CONTIGUOUS')),
                  c_float,
-                 np.ctypeslib.ndpointer(dtype=np.float32, ndim=2,
+                 np.ctypeslib.ndpointer(dtype=c_float, ndim=2,
                                         flags=('C_CONTIGUOUS')),
-                 np.ctypeslib.ndpointer(dtype=np.int, ndim=1,
+                 np.ctypeslib.ndpointer(dtype=c_int, ndim=1,
                                         flags=('C_CONTIGUOUS')),
-                 np.ctypeslib.ndpointer(dtype=np.int, ndim=1,
+                 np.ctypeslib.ndpointer(dtype=c_int, ndim=1,
                                         flags=('C_CONTIGUOUS')),
                  c_int, c_int, c_int]
 
@@ -182,8 +187,9 @@ class VC_fxx(VC):
                          self.f_xx,
                          self.nx_padded, self.ny_padded, self.nx,
                          self.model_padded2_dt2, self.dx,
-                         sources, sources_x, sources_y, num_sources, source_len,
-                         num_steps)
+                         sources,
+                         sources_x.astype(c_int), sources_y.astype(c_int),
+                         num_sources, source_len, num_steps)
 
         if num_steps%2 != 0:
             tmp = self.current_wavefield
