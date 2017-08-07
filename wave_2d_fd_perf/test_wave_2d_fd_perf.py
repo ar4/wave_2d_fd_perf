@@ -17,7 +17,7 @@ def green(x0, y0, x1, y1, dx, dt, T, v, f):
     """
     r = np.sqrt(np.abs(x1-x0)**2 + np.abs(y1-y0)**2)/v
     def g(t):
-        if t>r:
+        if t > r:
             return 1/(2*np.pi)/np.sqrt(t**2-r**2) * f[int(t/dt)]*dt*dx**2*v
         else:
             return 0.0
@@ -40,8 +40,8 @@ def model_one(N=10, calc_expected=True):
     # direct wave
     if calc_expected:
         expected = np.array([green(x*dx, y*dx, sx*dx, sy*dx, dx, dt,
-                                    (nsteps)*dt, 1500,
-                                    source) for x in range(N) for y in range(N)])
+                                   (nsteps)*dt, 1500,
+                                   source) for x in range(N) for y in range(N)])
         expected = expected.reshape([N, N])
     else:
         expected = []
@@ -56,7 +56,6 @@ def model_two():
     N = 100
     np.random.seed(0)
     model = np.random.random([N, N]).astype(np.float32) * 3000 + 1500
-    max_vel = 4500
     dx = 5
     dt = 0.0006
     nsteps = np.ceil(0.2/dt).astype(np.int)

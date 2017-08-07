@@ -5,23 +5,27 @@ import pandas as pd
 from wave_2d_fd_perf.propagators import (VC8a_Ofast_gcc, VC9a_Ofast_gcc, VC10a_Ofast_gcc)
 from wave_2d_fd_perf.test_wave_2d_fd_perf import ricker
 
-def run_timing_model_size(num_repeat=10, num_steps=10, model_sizes=range(200, 1200, 200), versions=None, blocksizes_y=None, blocksizes_x=None, align=None):
+def run_timing_model_size(num_repeat=10, num_steps=10,
+                          model_sizes=range(200, 1200, 200), versions=None,
+                          blocksizes_y=None, blocksizes_x=None, align=None):
     """Time implementations as model size varies."""
 
-    if versions == None:
+    if versions is None:
         versions = _versions()
 
-    if blocksizes_y == None:
+    if blocksizes_y is None:
         blocksizes_y = _blocksizes()
 
-    if blocksizes_x == None:
+    if blocksizes_x is None:
         blocksizes_x = _blocksizes()
 
-    times = pd.DataFrame(columns=['version', 'blocksize_y', 'blocksize_x', 'num_steps', 'model_size', 'time'])
+    times = pd.DataFrame(columns=['version', 'blocksize_y', 'blocksize_x',
+                                  'num_steps', 'model_size', 'time'])
 
     for N in model_sizes:
         model = _make_model(N, num_steps)
-        times = _time_versions(versions, blocksizes_y, blocksizes_x, model, num_repeat, times, align)
+        times = _time_versions(versions, blocksizes_y, blocksizes_x, model,
+                               num_repeat, times, align)
 
     return times
 
@@ -77,7 +81,7 @@ def _time_version(version, model, blocksize_y, blocksize_x, num_repeat, align=No
     def closure():
         """Closure over variables so they can be used in repeat below."""
         v.step(model['nsteps'], model['sources'], model['sx'], model['sy'])
- 
+
     return np.min(repeat(closure, number=1, repeat=num_repeat))
 
 if __name__ == '__main__':

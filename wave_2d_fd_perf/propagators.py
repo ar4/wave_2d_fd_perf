@@ -22,13 +22,13 @@ def alloc_aligned(m, n, k, dtype, align):
 
 class Propagator(object):
     """A finite difference propagator for the 2D wave equation.
-    
+
        If align is not specified, the default value "1" will be used,
        which means no alignment will be done.
     """
     def __init__(self, model, dx, dt=None, align=None):
 
-        if align == None:
+        if align is None:
             align = 1
 
         self.nx = model.shape[1]
@@ -147,9 +147,9 @@ class VC_fxx(VC):
     """C implementations with allocated f_xx."""
     def __init__(self, libname, model, dx, dt=None, align=None):
         super(VC_fxx, self).__init__(libname, model, dx, dt, align)
-        if align == None:
+        if align is None:
             align = 1
-        self.f_xx = alloc_aligned(self.ny_padded, self.nx_padded, 8, np.float32, align);
+        self.f_xx = alloc_aligned(self.ny_padded, self.nx_padded, 8, np.float32, align)
         self._libvc.step.argtypes = \
                 [np.ctypeslib.ndpointer(dtype=np.float32, ndim=2,
                                         shape=(self.ny_padded, self.nx_padded),
@@ -195,16 +195,13 @@ class VC_fxx(VC):
 
 class VF(Propagator):
     """Fortran implementations."""
-    def __init__(self, model, dx, dt=None, align=None):
-        super(VF, self).__init__(model, dx, dt, align)
-
     def step(self, num_steps, sources=None, sources_x=None, sources_y=None):
         """Propagate wavefield."""
 
         self.fstep(self.current_wavefield.T, self.previous_wavefield.T,
-                         self.model_padded2_dt2.T, self.nx,
-                         self.dx,
-                         sources.T, sources_x, sources_y, num_steps)
+                   self.model_padded2_dt2.T, self.nx,
+                   self.dx,
+                   sources.T, sources_x, sources_y, num_steps)
 
         if num_steps%2 != 0:
             tmp = self.current_wavefield
@@ -299,15 +296,9 @@ class VC6_Ofast_gcc(VC):
 
 
 class VC6_Ofast_256_gcc(VC):
-    """VC6 with 256 align specified in code."""
+    """VC6 with 256-bit align specified in code."""
     def __init__(self, model, dx, dt=None, align=None):
         super(VC6_Ofast_256_gcc, self).__init__('libvc6_Ofast_256_gcc', model, dx, dt, align)
-
-
-class VC6_Ofast_256b_gcc(VC):
-    """VC6 with 256-bit alignment specified in code."""
-    def __init__(self, model, dx, dt=None, align=None):
-        super(VC6_Ofast_256a_gcc, self).__init__('libvc6_Ofast_gcc', model, dx, dt, align)
 
 
 class VC7_Ofast_gcc(VC):
@@ -332,7 +323,7 @@ class VC10_Ofast_gcc(VC):
     """VC6 with blocking, parallelized over all blocks."""
     def __init__(self, model, dx, dt=None, align=None):
         super(VC10_Ofast_gcc, self).__init__('libvc10_Ofast_gcc', model, dx, dt, align)
-        
+ 
 
 class VC8a_Ofast_gcc(VC_blocksize):
     """VC8, variable blocksize."""

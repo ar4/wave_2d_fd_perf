@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-def configuration(parent_package='',top_path=None):
+def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
-    config = Configuration('wave_2d_fd_perf',parent_package,top_path)
+    config = Configuration('wave_2d_fd_perf', parent_package, top_path)
     config.add_subpackage('wave_2d_fd_perf')
     return config
 

@@ -5,10 +5,11 @@ import pandas as pd
 from wave_2d_fd_perf.propagators import (VC1_O2_gcc, VC1_O3_gcc, VC1_Ofast_gcc, VC2_O2_gcc, VC2_O3_gcc, VC2_Ofast_gcc, VC3_Ofast_gcc, VC3_Ofast_unroll_gcc, VC4_Ofast_gcc, VC4_Ofast_extra1_gcc, VC4_Ofast_extra2_gcc, VC4_Ofast_extra3_gcc, VC5_Ofast_gcc, VC6_Ofast_gcc, VC6_Ofast_256_gcc, VC7_Ofast_gcc, VC8_Ofast_gcc, VC9_Ofast_gcc, VC10_Ofast_gcc, VC11_Ofast_gcc, VC12_Ofast_gcc, VC13_Ofast_gcc, VC14_Ofast_gcc, VC15_Ofast_gcc, VF1_O2_gcc, VF1_O3_gcc, VF1_Ofast_gcc, VF2_Ofast_gcc, VF3_Ofast_gcc, VF4_Ofast_gcc, VF5_Ofast_gcc, VF6_Ofast_gcc, VF6_Ofast_autopar_gcc)
 from wave_2d_fd_perf.test_wave_2d_fd_perf import ricker
 
-def run_timing_num_steps(num_repeat=10, num_steps=range(0, 110, 10), model_size=1000, versions=None, align=None):
+def run_timing_num_steps(num_repeat=10, num_steps=range(0, 110, 10),
+                         model_size=1000, versions=None, align=None):
     """Time implementations as num_steps varies."""
 
-    if versions == None:
+    if versions is None:
         versions = _versions()
 
     times = pd.DataFrame(columns=['version', 'num_steps', 'model_size', 'time'])
@@ -20,10 +21,12 @@ def run_timing_num_steps(num_repeat=10, num_steps=range(0, 110, 10), model_size=
     return times
 
 
-def run_timing_model_size(num_repeat=10, num_steps=10, model_sizes=range(200, 2200, 200), versions=None, align=None):
+def run_timing_model_size(num_repeat=10, num_steps=10,
+                          model_sizes=range(200, 2200, 200), versions=None,
+                          align=None):
     """Time implementations as model size varies."""
 
-    if versions == None:
+    if versions is None:
         versions = _versions()
 
     times = pd.DataFrame(columns=['version', 'num_steps', 'model_size', 'time'])
@@ -75,7 +78,6 @@ def _versions():
 def _make_model(N, nsteps):
     """Create a model with a given number of elements and time steps."""
     model = np.random.random([N, N]).astype(np.float32) * 3000 + 1500
-    max_vel = 4500
     dx = 5
     dt = 0.001
     source = ricker(25, nsteps, dt, 0.05)
@@ -93,7 +95,7 @@ def _time_versions(versions, model, num_repeat, dataframe, align=None):
     for v in versions:
 
         if 'align' in v.keys():
-            if ((align) and (align % v['align']) == 0):
+            if (align) and (align % v['align']) == 0:
                 ok_to_run = True
             else:
                 ok_to_run = False
@@ -116,7 +118,7 @@ def _time_version(version, model, num_repeat, align=None):
     def closure():
         """Closure over variables so they can be used in repeat below."""
         v.step(model['nsteps'], model['sources'], model['sx'], model['sy'])
- 
+
     return np.min(repeat(closure, number=1, repeat=num_repeat))
 
 if __name__ == '__main__':
