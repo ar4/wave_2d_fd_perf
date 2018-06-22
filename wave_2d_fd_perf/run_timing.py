@@ -2,7 +2,10 @@
 from timeit import repeat
 import numpy as np
 import pandas as pd
-from wave_2d_fd_perf.propagators import (VC1_O2_gcc, VC1_O3_gcc, VC1_Ofast_gcc, VC2_O2_gcc, VC2_O3_gcc, VC2_Ofast_gcc, VC3_Ofast_gcc, VC3_Ofast_unroll_gcc, VC4_Ofast_gcc, VC4_Ofast_extra1_gcc, VC4_Ofast_extra2_gcc, VC4_Ofast_extra3_gcc, VC5_Ofast_gcc, VC6_Ofast_gcc, VC6_Ofast_256_gcc, VC7_Ofast_gcc, VC8_Ofast_gcc, VC9_Ofast_gcc, VC10_Ofast_gcc, VC11_Ofast_gcc, VC12_Ofast_gcc, VC13_Ofast_gcc, VC14_Ofast_gcc, VC15_Ofast_gcc, VF1_O2_gcc, VF1_O3_gcc, VF1_Ofast_gcc, VF2_Ofast_gcc, VF3_Ofast_gcc, VF4_Ofast_gcc, VF5_Ofast_gcc, VF6_Ofast_gcc, VF6_Ofast_autopar_gcc)
+from wave_2d_fd_perf.propagators import (VC1_O2_gcc, VC1_O3_gcc, VC1_Ofast_gcc, VC2_O2_gcc, VC2_O3_gcc, VC2_Ofast_gcc, VC3_Ofast_gcc, VC3_Ofast_unroll_gcc, VC4_Ofast_gcc, VC4_Ofast_extra1_gcc, VC4_Ofast_extra2_gcc, VC4_Ofast_extra3_gcc, VC5_Ofast_gcc, VC6_Ofast_gcc, VC6_Ofast_256_gcc, VC7_Ofast_gcc, VC8_Ofast_gcc, VC9_Ofast_gcc, VC10_Ofast_gcc, VC11_Ofast_gcc, VC12_Ofast_gcc, VC13_Ofast_gcc, VC14_Ofast_gcc, VC15_Ofast_gcc, VF1_O2_gcc, VF1_O3_gcc, VF1_Ofast_gcc, VF2_Ofast_gcc, VF3_Ofast_gcc, VF4_Ofast_gcc, VF5_Ofast_gcc, VF6_Ofast_gcc, VF6_Ofast_autopar_gcc, VCython1, VCython2)
+from wave_2d_fd_perf.vpytorch1 import VPytorch1
+from wave_2d_fd_perf.vpytorch2 import VPytorch2
+from wave_2d_fd_perf.vpytorch3 import VPytorch3
 from wave_2d_fd_perf.test_wave_2d_fd_perf import ricker
 
 def run_timing_num_steps(num_repeat=10, num_steps=range(0, 110, 10),
@@ -72,7 +75,12 @@ def _versions():
             {'class': VF4_Ofast_gcc, 'name': 'F v4 (gcc, -Ofast)'},
             {'class': VF5_Ofast_gcc, 'name': 'F v5 (gcc, -Ofast)'},
             {'class': VF6_Ofast_gcc, 'name': 'F v6 (gcc, -Ofast)'},
-            {'class': VF6_Ofast_autopar_gcc, 'name': 'F v6 (gcc, -Ofast autopar)'}]
+            {'class': VF6_Ofast_autopar_gcc, 'name': 'F v6 (gcc, -Ofast autopar)'},
+            {'class': VCython1, 'name': 'Cython v1)'},
+            {'class': VCython2, 'name': 'Cython v2)'},
+            {'class': VPytorch1, 'name': 'PyTorch v1)'},
+            {'class': VPytorch2, 'name': 'PyTorch v2)'},
+            {'class': VPytorch3, 'name': 'PyTorch v3)'}]
 
 
 def _make_model(N, nsteps):

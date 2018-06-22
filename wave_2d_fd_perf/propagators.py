@@ -3,8 +3,9 @@ finite difference method so that runtimes can be compared.
 """
 from ctypes import c_int, c_float
 import numpy as np
+import torch
 import wave_2d_fd_perf
-from wave_2d_fd_perf import libvf1_O2_gcc, libvf1_O3_gcc, libvf1_Ofast_gcc, libvf2_Ofast_gcc, libvf3_Ofast_gcc, libvf4_Ofast_gcc, libvf5_Ofast_gcc, libvf6_Ofast_gcc, libvf6_Ofast_autopar_gcc
+from wave_2d_fd_perf import libvf1_O2_gcc, libvf1_O3_gcc, libvf1_Ofast_gcc, libvf2_Ofast_gcc, libvf3_Ofast_gcc, libvf4_Ofast_gcc, libvf5_Ofast_gcc, libvf6_Ofast_gcc, libvf6_Ofast_autopar_gcc, vcython1, vcython2
 
 
 def alloc_aligned(m, n, k, dtype, align):
@@ -26,7 +27,7 @@ class Propagator(object):
        If align is not specified, the default value "1" will be used,
        which means no alignment will be done.
     """
-    def __init__(self, model, dx, dt=None, align=None):
+    def __init__(self, model, pad, dx, dt=None, align=None):
 
         if align is None:
             align = 1
@@ -44,19 +45,20 @@ class Propagator(object):
         # calculate trailing padding in x dimension so that row
         # length is a multiple of align, at least 8
         align32 = int(np.ceil(align / np.dtype(np.float32).itemsize)) # align in float size
-        nx_padded = int(np.ceil((self.nx + 2 * 8)/align32)) * align32
-        x_end_pad = nx_padded - (self.nx + 8)
+        nx_padded = int(np.ceil((self.nx + 2 * pad)/align32)) * align32
+        x_end_pad = nx_padded - (self.nx + pad)
 
-        self.nx_padded = self.nx + 8 + x_end_pad
-        self.ny_padded = self.ny + 2 * 8
+        self.nx_padded = self.nx + pad + x_end_pad
+        self.ny_padded = self.ny + 2 * pad
 
-        self.model_padded = np.pad(model, ((8, 8), (8, x_end_pad)), 'edge')
+        self.model_padded = np.pad(model, ((pad, pad), (pad, x_end_pad)), 'edge')
 
-        self.model_padded2_dt2 = alloc_aligned(self.ny_padded, self.nx_padded, 8, np.float32, align)
+        self.model_padded2_dt2 = alloc_aligned(self.ny_padded, self.nx_padded,
+                                               pad, np.float32, align)
         self.model_padded2_dt2[:, :] = self.model_padded**2 * self.dt**2
 
-        self.wavefield = [alloc_aligned(self.ny_padded, self.nx_padded, 8, np.float32, align),
-                          alloc_aligned(self.ny_padded, self.nx_padded, 8, np.float32, align)
+        self.wavefield = [alloc_aligned(self.ny_padded, self.nx_padded, pad, np.float32, align),
+                          alloc_aligned(self.ny_padded, self.nx_padded, pad, np.float32, align)
                          ]
         self.current_wavefield = self.wavefield[0]
         self.previous_wavefield = self.wavefield[1]
@@ -65,10 +67,12 @@ class Propagator(object):
 class VC(Propagator):
     """C implementations."""
     def __init__(self, libname, model, dx, dt=None, align=None):
-        super(VC, self).__init__(model, dx, dt, align)
+        pad = 8
+        super(VC, self).__init__(model, pad, dx, dt, align)
         #print(hex(self.current_wavefield.ctypes.data + 8 * np.dtype(np.float32).itemsize), flush=True)
 
-        self._libvc = np.ctypeslib.load_library(libname, wave_2d_fd_perf.__path__[0])
+        self._libvc = np.ctypeslib.load_library(libname,
+                                                wave_2d_fd_perf.__path__[0])
         self._libvc.step.argtypes = \
                 [np.ctypeslib.ndpointer(dtype=c_float, ndim=2,
                                         shape=(self.ny_padded, self.nx_padded),
@@ -201,6 +205,11 @@ class VC_fxx(VC):
 
 class VF(Propagator):
     """Fortran implementations."""
+
+    def __init__(self, model, dx, dt=None, align=None):
+        pad = 8
+        super(VF, self).__init__(model, pad, dx, dt, align)
+
     def step(self, num_steps, sources=None, sources_x=None, sources_y=None):
         """Propagate wavefield."""
 
@@ -215,6 +224,77 @@ class VF(Propagator):
             self.previous_wavefield = tmp
 
         return self.current_wavefield[8 : 8 + self.ny, 8 : 8 + self.nx]
+
+
+class VCython(Propagator):
+    """Cython implementations."""
+    def __init__(self, module, model, dx, dt=None, align=None):
+        pad = 8
+        super(VCython, self).__init__(model, pad, dx, dt, align)
+
+        self.fd_coeff = np.array([2*-924708642,
+                                  538137600,
+                                  -94174080,
+                                  22830080,
+                                  -5350800,
+                                  1053696,
+                                  -156800,
+                                  15360,
+                                  -735]) / 302702400 / dx**2
+        self.fd_coeff = self.fd_coeff.astype(np.float32)
+        self.stepfunc = module.step
+
+    def step(self, num_steps, sources=None, sources_x=None, sources_y=None):
+        """Propagate wavefield."""
+
+        num_sources = sources.shape[0]
+        source_len = sources.shape[1]
+        self.stepfunc(self.current_wavefield, self.previous_wavefield,
+                      self.nx_padded, self.ny_padded, self.nx,
+                      self.model_padded2_dt2,
+                      sources,
+                      sources_x.astype(c_int), sources_y.astype(c_int),
+                      num_sources, source_len, num_steps, self.fd_coeff)
+
+        if num_steps%2 != 0:
+            self.current_wavefield, self.previous_wavefield = \
+                self.previous_wavefield, self.current_wavefield
+
+        return self.current_wavefield[8 : 8 + self.ny, 8 : 8 + self.nx]
+
+
+class VPytorch(Propagator):
+    """PyTorch implementations."""
+    def __init__(self, model, pad, dx, dt=None, align=None):
+        super(VPytorch, self).__init__(model, pad, dx, dt, align)
+
+        self.model = torch.from_numpy(self.model_padded2_dt2[np.newaxis,
+                                                             np.newaxis])
+        self.wfc = torch.from_numpy(self.current_wavefield[np.newaxis,
+                                                           np.newaxis])
+        self.wfp = torch.from_numpy(self.previous_wavefield[np.newaxis,
+                                                            np.newaxis])
+        self.fd_coeff = np.array([2*-924708642,
+                                  538137600,
+                                  -94174080,
+                                  22830080,
+                                  -5350800,
+                                  1053696,
+                                  -156800,
+                                  15360,
+                                  -735]) / 302702400 / dx**2
+        self.fd_coeff = self.fd_coeff.astype(np.float32)
+        self.kernel1d = torch.tensor(np.hstack([self.fd_coeff[::-1],
+                                                self.fd_coeff[1:]]))
+        self.kernel2d = torch.zeros(17, 17)
+        self.kernel2d[8, :] = self.kernel1d
+        self.kernel2d[:, 8] = self.kernel1d
+        self.kernel1d[8] /= 2
+        self.kernel1d = self.kernel1d.reshape(1, 1, 17)
+        self.kernel2d = self.kernel2d.reshape(1, 1, 17, 17)
+        self.fd_coeff = torch.tensor(self.fd_coeff)
+
+        torch.backends.cudnn.benchmark = True
 
 
 class VC1_O2_gcc(VC):
@@ -329,7 +409,7 @@ class VC10_Ofast_gcc(VC):
     """VC6 with blocking, parallelized over all blocks."""
     def __init__(self, model, dx, dt=None, align=None):
         super(VC10_Ofast_gcc, self).__init__('libvc10_Ofast_gcc', model, dx, dt, align)
- 
+
 
 class VC8a_Ofast_gcc(VC_blocksize):
     """VC8, variable blocksize."""
@@ -446,3 +526,15 @@ class VF6_Ofast_autopar_gcc(VF):
     def __init__(self, model, dx, dt=None, align=None):
         super(VF6_Ofast_autopar_gcc, self).__init__(model, dx, dt, align)
         self.fstep = libvf6_Ofast_autopar_gcc.vf6.step
+
+
+class VCython1(VCython):
+    """VC1 implemented using Cython."""
+    def __init__(self, model, dx, dt=None, align=None):
+        super(VCython1, self).__init__(vcython1, model, dx, dt, align)
+
+
+class VCython2(VCython):
+    """VC6 implemented using Cython."""
+    def __init__(self, model, dx, dt=None, align=None):
+        super(VCython2, self).__init__(vcython2, model, dx, dt, align)

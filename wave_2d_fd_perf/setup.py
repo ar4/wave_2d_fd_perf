@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
+    from Cython.Build import cythonize
     config = Configuration('wave_2d_fd_perf', parent_package, top_path)
     config.add_extension(name='libvc1_O2_gcc', sources=['vc1.c'], extra_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-O2', '-std=c11'])
     config.add_extension(name='libvc1_O3_gcc', sources=['vc1.c'], extra_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-O3', '-std=c11'])
@@ -38,6 +39,10 @@ def configuration(parent_package='', top_path=None):
     config.add_extension(name='libvf5_Ofast_gcc', sources=['vf5.f90'], extra_f90_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-Ofast', '-std=f2008'])
     config.add_extension(name='libvf6_Ofast_gcc', sources=['vf6.f90'], extra_f90_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-Ofast', '-std=f2008'])
     config.add_extension(name='libvf6_Ofast_autopar_gcc', sources=['vf6.f90'], extra_f90_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-Ofast', '-std=f2008', '-floop-parallelize-all', '-ftree-parallelize-loops=4'])
+    #config.add_extension(name='vcython1', sources=['vcython1.pyx'], extra_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-Ofast', '-std=c11'])
+    #config.add_extension(name='vcython2', sources=['vcython2.pyx'], extra_compile_args=['-Wall', '-Wextra', '-pedantic', '-Werror', '-march=native', '-Ofast', '-std=c11', '-fopenmp'], extra_link_args=['-fopenmp'])
+    config.add_data_files(('wave_2d_fd_perf', 'vcython1.pyx'))
+    config.add_data_files(('wave_2d_fd_perf', 'vcython2.pyx'))
 
     return config
 
